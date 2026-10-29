@@ -1,0 +1,301 @@
+/* calendario.css */
+:root {
+    --primary: #f1592a;
+    --primary-dark: #d43d0f;
+    --secondary: #4a4a4a;
+    --text: #333333;
+    --background: #f5f5f5;
+    --white: #ffffff;
+    --shadow: 0 4px 6px rgba(0,0,0,0.1);
+    --border-radius: 8px;
+    --border: #e0e0e0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* ===== HEADER ===== */
+.header {
+    background: linear-gradient(135deg, var(--secondary) 0%, #2a2a2a 100%);
+    color: var(--white);
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo-small {
+    height: 40px;
+    width: auto;
+}
+
+.header-content h1 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    border-left: 2px solid var(--primary);
+    padding-left: 1rem;
+}
+
+.back-link {
+    margin-left: auto;
+    color: var(--white);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--white);
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    background: var(--white);
+    color: var(--secondary);
+}
+
+/* ===== CALENDÁRIO CONTAINER ===== */
+.calendario-container {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.visao-titulo {
+    color: var(--primary);
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid var(--primary);
+}
+
+/* ===== TABELA DO CALENDÁRIO ===== */
+.calendario-tabela {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1200px; /* Aumentado para caber colunas de 30min */
+}
+
+.calendario-linha {
+    display: table-row;
+}
+
+.calendario-celula {
+    display: table-cell;
+    padding: 8px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+}
+
+/* Cabeçalho */
+.calendario-celula.cabecalho-hora {
+    background: var(--secondary);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    width: 60px;
+    min-width: 60px;
+}
+
+.calendario-celula.cabecalho-dia {
+    background: var(--secondary);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    min-width: 80px; /* Reduzido para caber mais colunas */
+    font-size: 0.9rem;
+}
+
+.calendario-celula.cabecalho-dia small {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+/* Células de horário */
+.calendario-celula.horario {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: var(--secondary);
+    text-align: center;
+    width: 60px;
+    font-size: 0.85rem;
+}
+
+.calendario-celula.conteudo {
+    background: white;
+    min-height: 60px;
+    height: 70px;
+    padding: 4px;
+}
+
+/* Cards de reunião */
+.reuniao-card {
+    padding: 4px 6px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.75rem;
+    border-left-width: 3px;
+    border-left-style: solid;
+}
+
+.reuniao-card:hover {
+    transform: translateX(2px);
+    opacity: 0.9;
+}
+
+.reuniao-card strong {
+    display: block;
+    color: var(--secondary);
+    margin-bottom: 2px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reuniao-card small {
+    display: block;
+    color: #666;
+    font-size: 0.65rem;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reuniao-card .status-text {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.6rem;
+    font-weight: 600;
+}
+
+/* CORES POR STATUS - USANDO SUAS CORES */
+.reuniao-card.status-agendada {
+    background: rgb(255, 222, 137) !important;
+    border-left: 4px solid #f3772c !important;
+}
+
+.reuniao-card.status-finalizada {
+    background: rgba(39, 174, 96, 0.15) !important;
+    border-left: 4px solid #27ae60 !important;
+}
+
+.reuniao-card.status-cancelada {
+    background: rgba(255, 136, 136, 0.96) !important;
+    border-left: 4px solid #ff0000 !important;
+}
+
+.reuniao-card.status-agendada .status-text {
+    color: #f3772c !important;
+}
+
+.reuniao-card.status-finalizada .status-text {
+    color: #27ae60 !important;
+}
+
+.reuniao-card.status-cancelada .status-text {
+    color: #ff0000 !important;
+}
+
+/* ===== VISÃO DO DIA ===== */
+.visao-dia .calendario-celula.conteudo {
+    height: 100px;
+}
+
+/* ===== LOADING ===== */
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: #999;
+    font-size: 1.1rem;
+}
+
+/* ===== EMPTY MESSAGE ===== */
+.empty-message {
+    text-align: center;
+    padding: 3rem;
+    color: #999;
+    font-style: italic;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 1200px) {
+    .calendario-tabela {
+        min-width: 1000px;
+    }
+
+    .calendario-celula.cabecalho-dia {
+        min-width: 70px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .header-content {
+        flex-wrap: wrap;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .header-content h1 {
+        border-left: none;
+        padding-left: 0;
+        font-size: 1.2rem;
+    }
+
+    .back-link {
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+    }
+
+    .calendario-container {
+        padding: 1rem;
+    }
+
+    .reuniao-card {
+        font-size: 0.7rem;
+        padding: 3px;
+    }
+
+    .reuniao-card strong {
+        font-size: 0.75rem;
+    }
+
+    .reuniao-card small {
+        font-size: 0.6rem;
+    }
+}

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campbel - Editar Contato</title>
+  <link rel="stylesheet" th:href="@{/css/contatc.css}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="header">
+  <div class="header-content">
+    <img th:src="@{/images/logo-campbel.png}" alt="Campbel" class="logo-small">
+    <h1 th:text="${isEdicao} ? 'Editar Contato' : 'Novo Contato'">Editar Contato</h1>
+    <a th:href="@{/agenda}" class="back-link">← Voltar para Agenda</a>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card">
+    <h2 th:text="${isEdicao} ? 'Editar Contato' : 'Novo Contato'">Editar Contato</h2>
+
+    <!-- ID do contato (escondido) -->
+    <input type="hidden" id="contatoId" th:value="${contatoId}">
+
+    <form id="formEditarContato">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="nomeParticipante">Nome do Participante *</label>
+          <input type="text"
+                 id="nomeParticipante"
+                 class="form-control"
+                 placeholder="Digite o nome"
+                 required>
+        </div>
+
+        <div class="form-group">
+          <label for="nomeEmpresa">Nome da Empresa</label>
+          <input type="text"
+                 id="nomeEmpresa"
+                 class="form-control"
+                 placeholder="Digite o nome da empresa">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input type="email"
+               id="email"
+               name="email"
+               class="form-control"
+               placeholder="Digite o e-mail (opcional)">
+        <small class="field-hint">Opcional. Deixe em branco se não tiver</small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="telefone">Telefone Pessoal</label>
+          <input type="text"
+                 id="telefone"
+                 class="form-control"
+                 placeholder="(11) 91234-5678"
+                 maxlength="15">
+          <small class="field-hint">Digite apenas números</small>
+        </div>
+
+        <!-- NOVO CAMPO: WHATSAPP -->
+        <div class="form-group">
+          <label for="whatsapp">📱 WhatsApp</label>
+          <input type="text" id="whatsapp" class="form-control" placeholder="(11) 91234-5678" maxlength="15">
+          <small class="field-hint">Digite apenas números</small>
+        </div>
+      </div>
+
+        <div class="form-group">
+          <label for="telefoneEmpresarial">Telefone Empresarial</label>
+          <input type="text"
+                 id="telefoneEmpresarial"
+                 class="form-control"
+                 placeholder="(11) 91234-5678"
+                 maxlength="15">
+          <small class="field-hint">Digite apenas números</small>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="window.location.href='/agenda'">Cancelar</button>
+        <button type="submit" class="btn-primary">Salvar Alterações</button>
+      </div>
+    </form>
+  </div>
+</main>
+
+<script th:src="@{/js/editar_contato.js}"></script>
+</body>
+</html>

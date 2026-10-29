@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campbel - Agendar Reunião</title>
+    <link rel="stylesheet" th:href="@{/css/reunioes.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="header">
+    <div class="header-content">
+        <img th:src="@{/images/logo-campbel.png}" alt="Campbel" class="logo-small">
+        <h1>Agendar Reunião</h1>
+        <a th:href="@{/}" class="back-link">← Voltar</a>
+    </div>
+</header>
+
+<main class="container">
+    <div class="card">
+        <h2>Nova Reunião</h2>
+        <form id="formReuniao">
+            <div class="form-group">
+                <label for="titulo">Título da Reunião *</label>
+                <input type="text" id="titulo" class="form-control" placeholder="Ex: Reunião com cliente" required>
+            </div>
+
+            <!-- Empresa da Reunião -->
+            <div class="form-group">
+                <label for="empresaReuniao">Empresa</label>
+                <input type="text" id="empresaReuniao" class="form-control" placeholder="Nome da empresa para esta reunião">
+            </div>
+
+            <!-- ANFITRIÕES MÚLTIPLOS -->
+            <div class="form-group">
+                <label>Anfitriões *</label>
+                <div class="anfitrioes-container">
+                    <!-- Lista de anfitriões selecionados -->
+                    <div id="listaAnfitrioesSelecionados" class="anfitrioes-selecionados">
+                        <div class="anfitrioes-placeholder">Nenhum anfitrião adicionado</div>
+                    </div>
+
+                    <!-- Campo para adicionar novo anfitrião -->
+                    <div class="campo-com-lista">
+                        <input type="text"
+                               id="novoAnfitriaoInput"
+                               class="form-control campo-busca"
+                               placeholder="Digite para buscar e adicionar anfitrião..."
+                               autocomplete="off">
+                        <div class="lista-flutuante" id="listaNovoAnfitriao"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PARTICIPANTES MÚLTIPLOS -->
+            <div class="form-group">
+                <label>Participantes *</label>
+                <div class="participantes-container">
+                    <!-- Lista de participantes selecionados -->
+                    <div id="listaParticipantesSelecionados" class="participantes-selecionados">
+                        <div class="participantes-placeholder">Nenhum participante adicionado</div>
+                    </div>
+
+                    <!-- Campo para adicionar novo participante -->
+                    <div class="campo-com-lista">
+                        <input type="text"
+                               id="novoParticipanteInput"
+                               class="form-control campo-busca"
+                               placeholder="Digite para buscar e adicionar participante..."
+                               autocomplete="off">
+                        <div class="lista-flutuante" id="listaNovoParticipante"></div>
+                    </div>
+                </div>
+                <!-- Campo hidden para armazenar os IDs dos participantes -->
+                <input type="hidden" id="participantesIds" name="participantesIds">
+            </div>
+
+            <div class="form-group">
+                <label for="horario">Data e Hora *</label>
+                <input type="datetime-local"
+                       id="horario"
+                       class="form-control"
+                       required
+                       min="2024-01-01T00:00"
+                       max="2030-12-31T23:59">
+                <small class="field-hint">Use ano com 4 dígitos (ex: 2026)</small>
+                <div id="erroData" class="erro-campo" style="color: #dc3545; font-size: 0.85rem; display: none;">
+                    ⚠️ Ano deve estar entre 2024 e 2030!
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="sala">Sala *</label>
+                <select id="sala" class="form-control" required>
+                    <option value="">Selecione uma sala...</option>
+                    <option value="Sala 01">Sala de Reunião 1</option>
+                    <option value="Sala 02">Sala de Reunião 2</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="motivo">Motivo / Pauta</label>
+                <textarea id="motivo" class="form-control" rows="3" placeholder="Descreva o motivo da reunião..."></textarea>
+            </div>
+
+            <button type="submit"
+                    class="btn-primary">
+                Agendar Reunião
+            </button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Próximas Reuniões</h2>
+        <div id="listaReunioes" class="reunioes-list"></div>
+    </div>
+</main>
+
+<script th:src="@{/js/reuniao.js}"></script>
+</body>
+</html>

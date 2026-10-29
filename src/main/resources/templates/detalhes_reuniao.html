@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campbel - Detalhes da Reunião</title>
+    <link rel="stylesheet" th:href="@{/css/reunioes.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="header">
+    <div class="header-content">
+        <img th:src="@{/images/logo-campbel.png}" alt="Campbel" class="logo-small">
+        <h1>Detalhes da Reunião</h1>
+        <a th:href="@{/}" class="back-link">← Voltar</a>
+    </div>
+</header>
+
+<main class="detalhes-container">
+    <div class="detalhes-card" id="detalhesContainer">
+        <div class="loading">Carregando detalhes...</div>
+    </div>
+</main>
+
+<!-- INFO DO USUÁRIO PARA O JS -->
+<input type="hidden" id="usuarioRole" th:value="${session.usuarioLogado != null ? session.usuarioLogado.role : ''}">
+<input type="hidden" id="reuniaoId" th:value="${reuniaoId}">
+
+<script th:src="@{/js/detalhes_reuniao.js}"></script>
+</body>
+</html>

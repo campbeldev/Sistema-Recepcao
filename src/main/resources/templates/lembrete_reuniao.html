@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lembrete de Reunião</title>
+    <link rel="stylesheet" th:href="@{/css/lembrete_email.css}">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <img th:src="@{cid:logoImage}" alt="Campbel" class="logo">
+        <h1>⏰ Lembrete de Reunião</h1>
+        <div class="badge">Faltam 30 minutos!</div>
+    </div>
+
+    <div class="content">
+        <div class="alerta">
+            <h2>⏳ 30 MINUTOS</h2>
+            <p>Sua reunião começa em meia hora!</p>
+        </div>
+
+        <p>Olá, <strong th:text="${nomeDestinatario}">João Silva</strong>,</p>
+
+        <p>Este é um lembrete automático do sistema de recepção da Campbel.</p>
+
+        <div class="info-box">
+            <h3 style="color: #f1592a; margin-top: 0;" th:text="${reuniao.titulo}">Reunião de TI</h3>
+            <p><strong>📅 Data:</strong> <span th:text="${dataFormatada}">05/03/2026 14:00</span></p>
+            <p><strong>📍 Sala:</strong> <span th:text="${reuniao.sala}">Sala 01</span></p>
+            <p><strong>👤 Anfitrião:</strong> <span th:text="${reuniao.nomeAnfitriao}">João Silva</span></p>
+            <p th:if="${reuniao.motivo}"><strong>📝 Motivo:</strong> <span th:text="${reuniao.motivo}">Motivo da reunião</span></p>
+        </div>
+
+        <div style="text-align: center;">
+            <div class="relogio" th:text="${horaReuniao}">14:00</div>
+            <a th:href="@{'http://' + ${baseUrl} + '/reuniao/detalhes_reuniao?id=' + ${reuniao.id}}" class="button">
+                Ver Detalhes
+            </a>
+        </div>
+
+        <p style="margin-top: 30px; font-size: 0.9rem; color: #999;">
+            ⚡ Este é um lembrete automático do sistema de recepção.
+        </p>
+    </div>
+
+    <div class="footer">
+        <p>© Campbel Construções e Terraplenagem LTDA.</p>
+        <p style="font-size: 0.8rem;">Sistema de Recepção - Lembretes automáticos</p>
+    </div>
+</div>
+</body>
+</html>

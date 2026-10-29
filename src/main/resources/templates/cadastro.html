@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campbel - Cadastro</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div class="logo-wrapper">
+            <img th:src="@{/images/logo-campbel.png}" alt="Campbel" class="logo">
+        </div>
+
+        <h2>Criar Nova Conta</h2>
+
+        <div th:if="${erro}" class="alert-error" th:text="${erro}"></div>
+
+        <form method="post" action="/cadastro">
+            <!-- Nome e Email na mesma linha -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nome">Nome Completo</label>
+                    <input type="text" id="nome" name="nome" class="form-control"
+                           placeholder="Digite seu nome" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" class="form-control"
+                           placeholder="Digite seu e-mail" required>
+                </div>
+            </div>
+
+            <!-- Usuário e Senha na mesma linha -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" name="username" class="form-control"
+                           placeholder="Escolha um usuário" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <div class="password-container">
+                        <input type="password"
+                               id="password"
+                               name="password"
+                               class="form-control"
+                               placeholder="Crie uma senha"
+                               required>
+                        <button type="button" class="toggle-password" tabindex="-1">👁️</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="role">Tipo de Usuário</label>
+                <select id="role" name="role" class="form-control" required>
+                    <option value="RECEPCIONISTA">👩‍💼 Recepcionista</option>
+                    <option value="ADMIN">👑 Administrador</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-primary">Criar Conta</button>
+        </form>
+
+        <div class="links">
+            <a href="/login">🔙 Já tenho conta</a>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/senha.js}"></script>
+</body>
+</html>

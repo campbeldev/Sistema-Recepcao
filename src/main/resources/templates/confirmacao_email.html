@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmação de Reunião</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 10px 0 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .logo {
+            height: 60px;
+            width: auto;
+        }
+        .content {
+            padding: 30px;
+        }
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #f1592a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .info-box h3 {
+            color: #f1592a;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .info-box p {
+            margin: 8px 0;
+        }
+        .info-box strong {
+            color: #4a4a4a;
+            min-width: 90px;
+            display: inline-block;
+        }
+        .anfitrioes-box, .participantes-box {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .anfitrioes-box h4, .participantes-box h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #4a4a4a;
+        }
+        .anfitriao-item, .participante-item {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .anfitriao-item:last-child, .participante-item:last-child {
+            border-bottom: none;
+        }
+        .badge-anfitriao {
+            background: #f1592a;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        .button-wrapper {
+            text-align: center;
+            margin-top: 25px;
+        }
+        .button {
+            display: inline-block;
+            background: #f1592a;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+        }
+        .email-muted {
+            color: #999;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <img src="cid:logoCampbel" alt="Campbel" width="200" style="display: block; margin: 0 auto;">
+        <h1 th:text="${titulo}">Confirmação de Reunião</h1>
+    </div>
+
+    <div class="content">
+        <p>Olá, <strong th:text="${nomeDestinatario}">João Silva</strong>!</p>
+
+        <p th:if="${tipo == 'anfitriao'}">Você é o <strong>anfitrião</strong> da seguinte reunião:</p>
+        <p th:if="${tipo == 'participante'}">Você foi adicionado como <strong>participante</strong> da seguinte reunião:</p>
+
+        <div class="info-box">
+            <h3 th:text="${reuniao.titulo}">Título da Reunião</h3>
+            <p><strong>📅 Data:</strong> <span th:text="${dataFormatada}">00/00/0000 00:00</span></p>
+            <p><strong>📍 Sala:</strong> <span th:text="${reuniao.sala}">Sala de Reunião</span></p>
+            <p><strong>🏢 Empresa:</strong> <span th:text="${reuniao.empresaReuniao ?: 'Não informada'}">Empresa</span></p>
+            <p th:if="${reuniao.motivo}"><strong>📝 Motivo:</strong> <span th:text="${reuniao.motivo}">Motivo</span></p>
+        </div>
+
+        <!-- ===== LISTA DE ANFITRIÕES CORRIGIDA ===== -->
+        <div th:if="${reuniao.anfitrioes != null and not #lists.isEmpty(reuniao.anfitrioes)}" class="anfitrioes-box">
+            <h4>👤 Anfitriões da Reunião:</h4>
+            <div th:each="ra, iterStat : ${reuniao.anfitrioes}" class="anfitriao-item">
+                <strong th:text="${ra.contato.nomeParticipante}">Nome do Anfitrião</strong>
+                <span th:if="${iterStat.first}" class="badge-anfitriao">Principal</span>
+                <br>
+                <!-- CORREÇÃO: Verificação segura de email -->
+                <small th:if="${ra.contato.email != null and !ra.contato.email.isEmpty()}"
+                       th:text="${ra.contato.email}"
+                       class="email-muted">
+                    email@exemplo.com
+                </small>
+                <small th:if="${ra.contato.email == null or ra.contato.email.isEmpty()}"
+                       class="email-muted">
+                    Sem e-mail cadastrado
+                </small>
+            </div>
+        </div>
+        <div th:if="${reuniao.anfitrioes == null or #lists.isEmpty(reuniao.anfitrioes)}" class="anfitrioes-box">
+            <h4>👤 Anfitriões:</h4>
+            <p class="email-muted">Nenhum anfitrião cadastrado</p>
+        </div>
+
+        <!-- ===== LISTA DE PARTICIPANTES CORRIGIDA ===== -->
+        <div th:if="${reuniao.participantes != null and not #lists.isEmpty(reuniao.participantes)}" class="participantes-box">
+            <h4>👥 Participantes:</h4>
+            <div th:each="p : ${reuniao.participantes}" class="participante-item">
+                <strong th:text="${p.contato.nomeParticipante}">Nome</strong>
+                <!-- CORREÇÃO: Verificação segura de email -->
+                <span th:if="${p.contato.email != null and !p.contato.email.isEmpty()}"
+                      th:text="${p.contato.email}"
+                      style="display: block; font-size: 0.9rem; color: #666;">
+                    email@exemplo.com
+                </span>
+                <span th:if="${p.contato.email == null or p.contato.email.isEmpty()}"
+                      style="display: block; font-size: 0.9rem; color: #999; font-style: italic;">
+                    Sem e-mail cadastrado
+                </span>
+            </div>
+        </div>
+        <div th:if="${reuniao.participantes == null or #lists.isEmpty(reuniao.participantes)}" class="participantes-box">
+            <h4>👥 Participantes:</h4>
+            <p class="email-muted">Nenhum participante cadastrado</p>
+        </div>
+
+        <div class="button-wrapper">
+            <a th:href="${baseUrl} + '/reuniao/detalhes_reuniao?id=' + ${reuniao.id}" class="button">
+                Ver Detalhes da Reunião
+            </a>
+        </div>
+
+        <p style="margin-top: 30px; font-size: 0.85rem; color: #999; text-align: center;">
+            Este é um e-mail automático. Por favor, não responda.
+        </p>
+    </div>
+
+    <div class="footer">
+        <p>© Campbel Construções e Terraplenagem LTDA.</p>
+        <p style="font-size: 0.75rem;">Sistema de Recepção v1.0</p>
+    </div>
+</div>
+</body>
+</html>

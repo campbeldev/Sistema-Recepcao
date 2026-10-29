@@ -1,0 +1,242 @@
+/* usuarios.css - Estilo específico para lista de usuários */
+
+/* ===== HEADER ===== */
+.header {
+    background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
+    color: white;
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-content h1 {
+    font-size: 1.8rem;
+    font-weight: 500;
+}
+
+.back-link {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1.5rem;
+    border: 2px solid white;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    background: white;
+    color: #4a4a4a;
+}
+
+/* ===== CONTAINER ===== */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ===== CABEÇALHO DA LISTA ===== */
+.lista-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.lista-header h2 {
+    color: #333;
+    font-size: 1.5rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.lista-header h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: #f1592a;
+}
+
+.btn-novo {
+    background: #f1592a;
+    color: white;
+    text-decoration: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-novo:hover {
+    background: #d43d0f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(241,89,42,0.3);
+}
+
+/* ===== ALERTAS ===== */
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #27ae60;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== TABELA DE USUÁRIOS ===== */
+.tabela-usuarios {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.tabela-usuarios thead {
+    background: #4a4a4a;
+    color: white;
+}
+
+.tabela-usuarios th {
+    padding: 1.2rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tabela-usuarios td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.tabela-usuarios tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.tabela-usuarios tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ===== BADGES DE TIPO ===== */
+.badge-admin {
+    background: #f1592a;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-recepcionista {
+    background: #4a4a4a;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* ===== STATUS ===== */
+.status-ativo {
+    color: #27ae60;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.status-inativo {
+    color: #e74c3c;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* ===== AÇÕES (MANTENDO O LAYOUT ORIGINAL) ===== */
+.acoes {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Base para todos os botões (MANTENDO O ORIGINAL) */
+.btn-acao {
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* BOTÃO EDITAR (SÓ ESSE FOI MELHORADO) */
+.btn-editar {
+    background: #3469db;
+    color: white;
+}
+
+.btn-editar:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+/* BOTÃO DESATIVAR (IGUAL ANTES) */
+.btn-desativar {
+    background: #f39c12;
+    color: white;
+}
+
+/* BOTÃO ATIVAR (IGUAL ANTES) */
+.btn-ativar {
+    background: #27ae60;
+    color: white;
+}
+
+/* BOTÃO APAGAR (IGUAL ANTES) */
+.btn-apagar {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-acao:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}

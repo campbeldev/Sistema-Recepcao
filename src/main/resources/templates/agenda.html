@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campbel - Agenda de Contatos</title>
+  <link rel="stylesheet" th:href="@{/css/agenda.css}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="header">
+  <div class="header-content">
+    <img th:src="@{/images/logo-campbel.png}" alt="Campbel" class="logo-small">
+    <h1>Agenda de Contatos</h1>
+    <a th:href="@{/}" class="back-link">← Voltar</a>
+  </div>
+</header>
+
+<main class="container">
+  <!-- Barra de ferramentas -->
+  <div class="toolbar">
+    <input type="text" id="buscaContato" placeholder="🔍 Buscar por nome, empresa ou email..." class="search-input">
+  </div>
+
+  <!-- Estatísticas -->
+  <div class="stats">
+    <span>Total: <strong id="totalContatos">0</strong> contatos</span>
+  </div>
+
+  <!-- Lista de contatos -->
+  <div id="agendaLista" class="agenda-lista">
+    <div class="loading">Carregando contatos...</div>
+  </div>
+</main>
+
+<script th:src="@{/js/agenda.js}"></script>
+</body>
+</html>

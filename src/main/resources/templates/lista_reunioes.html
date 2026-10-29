@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${titulo}">Campbel - Lista de Reuniões</title>
+    <link rel="stylesheet" th:href="@{/css/reunioes.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="header">
+    <div class="header-content">
+        <img th:src="@{/images/logo-campbel.png}" alt="Campbel" class="logo-small">
+        <h1 th:text="${titulo}">Lista de Reuniões</h1>
+        <a th:href="@{/}" class="back-link">← Voltar</a>
+    </div>
+</header>
+
+<main class="container">
+    <div class="reunioes-list" id="reunioesList">
+        <div class="loading">Carregando...</div>
+    </div>
+</main>
+
+<input type="hidden" id="statusFiltro" th:value="${status}">
+<script th:src="@{/js/lista_reunioes.js}"></script>
+</body>
+</html>
