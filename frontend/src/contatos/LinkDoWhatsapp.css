@@ -1,0 +1,14 @@
+/* O link do WhatsApp em verde, como o do próprio WhatsApp. O verde-escuro (#008069) é o que o
+   WhatsApp Web usa nos links; o verde claro da marca (#25d366) quase some sobre o branco. */
+.recepcao-whatsapp.cds--link,
+.recepcao-whatsapp.cds--link:visited {
+  color: #008069;
+}
+
+.recepcao-whatsapp.cds--link:hover {
+  color: #005c4b;
+}
+
+.recepcao-whatsapp.cds--link:focus {
+  outline-color: #008069;
+}

@@ -129,7 +129,7 @@
         <div class="info-box">
             <h3 th:text="${reuniao.titulo}">Título da Reunião</h3>
             <p><strong>📅 Data:</strong> <span th:text="${dataFormatada}">00/00/0000 00:00</span></p>
-            <p><strong>📍 Sala:</strong> <span th:text="${reuniao.sala}">Sala de Reunião</span></p>
+            <p th:if="${reuniao.sala}"><strong>📍 Sala:</strong> <span th:text="${reuniao.sala}">Sala de Reunião</span></p>
             <p><strong>🏢 Empresa:</strong> <span th:text="${reuniao.empresaReuniao ?: 'Não informada'}">Empresa</span></p>
             <p th:if="${reuniao.motivo}"><strong>📝 Motivo:</strong> <span th:text="${reuniao.motivo}">Motivo</span></p>
         </div>
@@ -181,7 +181,7 @@
         </div>
 
         <div class="button-wrapper">
-            <a th:href="${baseUrl} + '/reuniao/detalhes_reuniao?id=' + ${reuniao.id}" class="button">
+            <a th:href="${baseUrl} + '/plataforma/#/reunioes?ver=' + ${reuniao.id}" class="button">
                 Ver Detalhes da Reunião
             </a>
         </div>

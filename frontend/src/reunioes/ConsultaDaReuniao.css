@@ -1,0 +1,155 @@
+/* A janela da reunião como ficha (opção A escolhida em 2026-11-09).
+   O kit não tem esse layout: estas regras são da Recepção, não do campbel-ui. */
+
+.recepcao-consulta .cds--modal-header__label {
+  margin-block-end: 0.5rem;
+}
+
+.recepcao-consulta .cds--modal-header__heading {
+  font-size: 1.5rem;
+  line-height: 1.33;
+}
+
+.recepcao-consulta .cds--modal-content {
+  padding-inline: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+/* Quando, onde e empresa: três quadros brancos colados, separados por uma linha fina. */
+.recepcao-consulta__fatos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--cds-border-subtle-01, #e0e0e0);
+}
+
+.recepcao-consulta__fato {
+  background: var(--cds-layer-02, #ffffff);
+  padding: 0.75rem 1rem;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.recepcao-consulta__rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.32px;
+}
+
+/* O motivo em destaque, com a borda azul à esquerda. */
+.recepcao-consulta__motivo {
+  background: var(--cds-layer-02, #ffffff);
+  border-inline-start: 3px solid var(--cds-interactive, #0f62fe);
+  padding: 0.75rem 1rem;
+}
+
+.recepcao-consulta .recepcao-consulta__motivo p {
+  margin: 0.25rem 0 0;
+  padding: 0;
+}
+
+/* Quem recebe e quem vem, lado a lado; quem vem fica mais largo. */
+.recepcao-consulta__pessoas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.recepcao-consulta__grupo {
+  background: var(--cds-layer-02, #ffffff);
+  padding: 0.75rem 1rem;
+  min-width: 0;
+}
+
+.recepcao-consulta__grupo h4 {
+  margin: 0 0 0.5rem;
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.32px;
+  text-transform: uppercase;
+}
+
+.recepcao-consulta .recepcao-consulta__nenhuma {
+  margin: 0;
+  padding: 0;
+  color: var(--cds-text-secondary, #525252);
+}
+
+.recepcao-consulta__pessoa {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-block: 0.625rem;
+  border-block-start: 1px solid var(--cds-border-subtle-01, #e0e0e0);
+}
+
+.recepcao-consulta__pessoa:first-of-type {
+  border-block-start: 0;
+}
+
+.recepcao-consulta__pessoa > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.recepcao-consulta__contato {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-block-start: 0.125rem;
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+}
+
+.recepcao-consulta__iniciais {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e0e0e0;
+  color: #161616;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+}
+
+.recepcao-consulta__iniciais--anfitriao {
+  background: #161616;
+  color: #ffffff;
+}
+
+/* O Carbon dá 25% a cada botão quando são três (e 50% quando é um só), sobrando um vão à esquerda.
+   Aqui os botões dividem o rodapé inteiro entre si, sejam um, dois ou três. */
+.recepcao-consulta .cds--modal-footer .cds--btn {
+  flex: 1 1 0;
+}
+
+/* Agendada: "Cancelar reunião" é o primeiro botão do rodapé, em vermelho sobre branco.
+   O mesmo vale para "Excluir" na janela do contato (ver ConsultaDoContato). */
+.recepcao-consulta--agendada .cds--modal-footer .cds--btn:first-child,
+.recepcao-consulta--com-exclusao .cds--modal-footer .cds--btn:first-child {
+  background: var(--cds-layer-01, #ffffff);
+  color: var(--cds-text-error, #da1e28);
+}
+
+.recepcao-consulta--agendada .cds--modal-footer .cds--btn:first-child:hover,
+.recepcao-consulta--com-exclusao .cds--modal-footer .cds--btn:first-child:hover {
+  background: var(--cds-button-danger-primary, #da1e28);
+  color: #ffffff;
+}
+
+/* No celular, tudo numa coluna só. */
+@media (max-width: 42rem) {
+  .recepcao-consulta__fatos,
+  .recepcao-consulta__pessoas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

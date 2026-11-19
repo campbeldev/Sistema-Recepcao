@@ -1,0 +1,85 @@
+/* O kit não tem cartão de reunião: estas regras são da Recepção, não do campbel-ui.
+   A folha é cinza clarinho (gray 20 do Carbon) com o mês em preto, o texto principal do tema. */
+
+/* Folha de calendário: o mês, o dia grande e a hora numa coluna à esquerda. */
+.recepcao-folha.cds--tile {
+  padding: 0;
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+}
+
+.recepcao-folha__lateral {
+  background: var(--cds-layer-accent-01, #e0e0e0);
+  padding: 1rem 0.5rem;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  text-align: center;
+}
+
+.recepcao-folha__mes {
+  color: var(--cds-text-primary, #161616);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.32px;
+  text-transform: uppercase;
+}
+
+.recepcao-folha__dia {
+  font-size: var(--cds-heading-05-font-size, 2rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.recepcao-folha__miolo {
+  padding: 1rem;
+  min-width: 0;
+}
+
+.recepcao-folha__hora {
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.32px;
+}
+
+/* A folha grande da próxima reunião: lateral preta (o mesmo preto do cabeçalho e do menu),
+   o dia e a hora maiores e o aviso "Próxima · começa em" numa etiqueta preta. */
+.recepcao-folha--grande.cds--tile {
+  grid-template-columns: 7rem minmax(0, 1fr);
+  height: 100%;
+}
+
+.recepcao-folha--grande .recepcao-folha__lateral {
+  background: #161616;
+}
+
+.recepcao-folha--grande .recepcao-folha__mes,
+.recepcao-folha--grande .recepcao-folha__dia {
+  color: #ffffff;
+}
+
+.recepcao-folha--grande .recepcao-folha__dia {
+  font-size: 3.5rem;
+}
+
+.recepcao-folha--grande .recepcao-folha__hora {
+  color: #c6c6c6;
+  font-size: 1.25rem;
+  letter-spacing: 0;
+}
+
+.recepcao-folha--grande .recepcao-folha__miolo strong {
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.33;
+}
+
+.recepcao-folha__aviso {
+  justify-self: start;
+  width: fit-content;
+  background: #161616;
+  color: #ffffff;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.32px;
+  padding: 0.125rem 0.5rem;
+}

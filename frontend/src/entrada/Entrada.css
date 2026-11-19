@@ -1,0 +1,161 @@
+/* A tela de entrada em metade preta (opção A escolhida em 2026-11-09).
+   Ocupa a página toda, sem a casca: regras da Recepção, não do campbel-ui. */
+
+.recepcao-entrada {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* A metade preta: o mesmo preto do cabeçalho e do menu, com o traço vermelho da Campbel. */
+/* Fundo: a foto das máquinas ao amanhecer, escurecida (mais no alto e embaixo, onde fica o texto). */
+.recepcao-entrada__marca {
+  background-color: #161616;
+  background-image:
+    linear-gradient(180deg, rgba(22, 22, 22, 0.85) 0%, rgba(22, 22, 22, 0.55) 45%, rgba(22, 22, 22, 0.85) 100%),
+    url('/plataforma/entrada/fundo.jpg');
+  background-size: cover;
+  background-position: left center;
+  color: #ffffff;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.recepcao-entrada__marca img {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.recepcao-entrada__marca h1 {
+  margin: 1.5rem 0 0;
+  font-size: 2.625rem;
+  font-weight: 300;
+  line-height: 1.2;
+}
+
+.recepcao-entrada__marca p {
+  margin: 0.75rem 0 0;
+  max-width: 34ch;
+  color: #c6c6c6;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.recepcao-entrada__faixa {
+  display: block;
+  width: 4rem;
+  height: 4px;
+  background: var(--campbel-vermelho, #e20712);
+}
+
+.recepcao-entrada__marca small {
+  color: #8d8d8d;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.32px;
+}
+
+/* A metade branca com o formulário no meio. */
+.recepcao-entrada__lado {
+  background: var(--cds-layer-01, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.recepcao-entrada__formulario {
+  width: min(100%, 22rem);
+}
+
+.recepcao-entrada__formulario h2 {
+  margin: 0;
+  font-size: var(--cds-heading-04-font-size, 1.75rem);
+  font-weight: 400;
+  line-height: 1.29;
+}
+
+.recepcao-entrada__formulario h2 + p {
+  margin: 0.25rem 0 0;
+  color: var(--cds-text-secondary, #525252);
+}
+
+.recepcao-entrada__formulario .cds--text-input {
+  background: var(--cds-field-02, #f4f4f4);
+}
+
+.recepcao-entrada__formulario .cds--btn {
+  width: 100%;
+  max-width: none;
+}
+
+.recepcao-entrada .recepcao-entrada__ajuda {
+  margin: 0;
+  color: var(--cds-text-helper, #6f6f6f);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.32px;
+}
+
+/* No celular, a metade preta vira uma faixa curta no alto, só com o símbolo e o nome. */
+@media (max-width: 42rem) {
+  .recepcao-entrada {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .recepcao-entrada__marca {
+    padding: 1.5rem 1rem;
+  }
+
+  .recepcao-entrada__marca > div {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .recepcao-entrada__marca img {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .recepcao-entrada__marca h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .recepcao-entrada__marca p,
+  .recepcao-entrada__faixa,
+  .recepcao-entrada__marca small {
+    display: none;
+  }
+
+  .recepcao-entrada__lado {
+    align-items: flex-start;
+    padding: 2rem 1rem;
+  }
+}
+
+/* A mensagem de recusa entra devagar, descendo um pouco, em vez de surgir de uma vez. */
+.recepcao-entrada__aviso {
+  animation: recepcao-entrada-aviso 240ms ease-out;
+}
+
+@keyframes recepcao-entrada-aviso {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recepcao-entrada__aviso {
+    animation: none;
+  }
+}
