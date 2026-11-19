@@ -31,7 +31,7 @@ public class TratadorDeErros {
     @ExceptionHandler(RegraDeNegocioException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public RespostaDeErro regraDeNegocio(RegraDeNegocioException e) {
-        return new RespostaDeErro(e.getMessage());
+        return new RespostaDeErro(e.getMessage(), e.getCampos());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -1,0 +1,123 @@
+name: Build e Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: recepcao_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d recepcao_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - run: chmod +x mvnw
+      - name: Build e testes
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/recepcao_db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+        run: ./mvnw -B verify
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, windows]
+    steps:
+      - uses: actions/checkout@v4
+
+      # Gera o jar no proprio servidor (sem artefato no GitHub, sem cota).
+      # Os testes ja passaram no job "build", por isso -DskipTests.
+      - name: Gerar jar no servidor
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          javac -version
+          .\mvnw.cmd -B clean package -DskipTests
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao gerar o jar." }
+
+      - name: Deploy
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $servico  = "CampbelRecepcao"
+          $pasta    = "C:\Sistemas\Sistema_Recepcao"
+          $porta    = "8080"
+          $versoes  = Join-Path $pasta "Versoes"
+          $jarAtual = Join-Path $pasta "recepcao.jar"
+          $jarNovo  = (Get-ChildItem "target\*.jar" | Where-Object { $_.Name -notlike "*plain*" } | Select-Object -First 1).FullName
+          $stamp    = Get-Date -Format "yyyyMMdd-HHmmss"
+          $backup   = Join-Path $versoes "recepcao-$stamp.jar"
+
+          if (-not (Test-Path -LiteralPath $versoes)) { New-Item -ItemType Directory $versoes | Out-Null }
+
+          # Para o servico e espera ele parar de verdade
+          Stop-Service $servico -ErrorAction SilentlyContinue
+          for ($i = 0; $i -lt 30; $i++) {
+            if ((Get-Service $servico).Status -eq "Stopped") { break }
+            Start-Sleep -Seconds 2
+          }
+
+          # Espera a porta liberar
+          for ($i = 0; $i -lt 30; $i++) {
+            if (-not (netstat -ano | Select-String ":$porta\s.*LISTENING")) { break }
+            Start-Sleep -Seconds 2
+          }
+
+          # Guarda o jar antigo e coloca o novo
+          Move-Item -LiteralPath $jarAtual $backup -Force
+          Copy-Item -LiteralPath $jarNovo $jarAtual -Force
+
+          # Inicia e espera o sistema responder (ate ~2 minutos)
+          $ok = $false
+          try {
+            Start-Service $servico
+            for ($i = 0; $i -lt 24; $i++) {
+              Start-Sleep -Seconds 5
+              try {
+                $r = Invoke-WebRequest "http://localhost:$porta/" -UseBasicParsing -TimeoutSec 5
+                if ($r.StatusCode -lt 500) { $ok = $true; break }
+              } catch {
+                if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -lt 500) { $ok = $true; break }
+              }
+            }
+          } catch {
+            Write-Host "Erro ao iniciar: $_"
+          }
+
+          # Rollback se nao subiu
+          if (-not $ok) {
+            Write-Host "Falhou. Voltando versao anterior..."
+            Stop-Service $servico -ErrorAction SilentlyContinue
+            for ($i = 0; $i -lt 30; $i++) {
+              if ((Get-Service $servico).Status -eq "Stopped") { break }
+              Start-Sleep -Seconds 2
+            }
+            Copy-Item -LiteralPath $backup $jarAtual -Force
+            Start-Service $servico
+            throw "Deploy falhou e foi feito rollback."
+          }
+
+          # Mantem so as 15 versoes mais recentes
+          Get-ChildItem $versoes -Filter "recepcao-2*.jar" | Sort-Object LastWriteTime -Descending | Select-Object -Skip 15 | Remove-Item

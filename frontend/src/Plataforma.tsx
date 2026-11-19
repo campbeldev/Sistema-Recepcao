@@ -10,15 +10,18 @@ import { Inicio } from './inicio/Inicio'
 import { Reunioes } from './reunioes/Reunioes'
 import { Contatos } from './contatos/Contatos'
 import { Lembretes } from './lembretes/Lembretes'
+import { Ramais } from './ramais/Ramais'
 import { Relatorio } from './relatorio/Relatorio'
 import { Usuarios } from './usuarios/Usuarios'
 import { avisosDoDia, type Reuniao } from './reunioes/tipos'
 import { avisosDosLembretes, type Lembrete } from './lembretes/tipos'
+import { avisosDosAniversarios, type Pessoa } from './ramais/tipos'
 
 const ROTAS: Record<string, ComponentType> = {
   '/': Inicio,
   '/reunioes': Reunioes,
   '/contatos': Contatos,
+  '/ramais': Ramais,
   '/lembretes': Lembretes,
   '/relatorio': Relatorio,
   '/usuarios': Usuarios,
@@ -47,13 +50,16 @@ export function Plataforma() {
   const [falha, setFalha] = useState<string>()
   const [avisos, setAvisos] = useState<AvisoDoSino[]>([])
 
-  // O sino mostra os lembretes de hoje e os atrasados, e as reuniões agendadas que ainda vão acontecer hoje.
-  // Se uma das listas não carregar, o sino mostra a outra.
+  // O sino mostra os aniversários de hoje, os lembretes de hoje e os atrasados, e as reuniões agendadas
+  // que ainda vão acontecer hoje. Se uma das listas não carregar, o sino mostra as outras.
   const carregarAvisos = useCallback(() => {
     Promise.all([
       api.ler<Lembrete[]>('/api/lembretes').then(avisosDosLembretes).catch(() => []),
       api.ler<Reuniao[]>('/reunioes').then(avisosDoDia).catch(() => []),
-    ]).then(([deLembretes, deReunioes]) => setAvisos([...deLembretes, ...deReunioes]))
+      api.ler<Pessoa[]>('/api/pessoas').then(avisosDosAniversarios).catch(() => []),
+    ]).then(([deLembretes, deReunioes, deAniversarios]) =>
+      setAvisos([...deAniversarios, ...deLembretes, ...deReunioes]),
+    )
   }, [])
 
   useEffect(() => {
