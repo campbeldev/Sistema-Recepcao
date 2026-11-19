@@ -27,14 +27,14 @@ const MENU: Grupo[] = [
         descricao: 'As pessoas que participam das reuniões, com a empresa, o e-mail e os telefones.',
       },
       {
-        nome: 'Ramais',
-        endereco: '/ramais',
-        descricao: 'As pessoas da empresa, com o setor, o ramal, o e-mail, o celular e o dia do aniversário.',
-      },
-      {
         nome: 'Lembretes',
         endereco: '/lembretes',
         descricao: 'O que a recepção precisa lembrar de fazer, para quem e em que dia.',
+      },
+      {
+        nome: 'Ramais',
+        endereco: '/ramais',
+        descricao: 'As pessoas da empresa, com o setor, o ramal, o e-mail, o celular e o dia do aniversário.',
       },
       {
         nome: 'Relatório',

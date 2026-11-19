@@ -29,11 +29,7 @@ export const MESES = [
   'dezembro',
 ]
 
-const DIAS_DA_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 const UM_DIA = 24 * 60 * 60 * 1000
-
-// Quantos dias para a frente o Início mostra os aniversários.
-export const JANELA_DE_ANIVERSARIOS = 30
 
 export function porNome(a: Pessoa, b: Pessoa): number {
   return a.nome.localeCompare(b.nome, 'pt-BR')
@@ -70,24 +66,6 @@ export function diasAte(pessoa: Pessoa, agora = new Date()): number | undefined 
 
 export function fazHoje(pessoa: Pessoa, agora = new Date()): boolean {
   return pessoa.mostrarAniversario && diasAte(pessoa, agora) === 0
-}
-
-export type Aniversariante = { pessoa: Pessoa; faltam: number; data: Date }
-
-// Quem deixa mostrar o aniversário e faz nos próximos dias, do mais perto para o mais longe.
-export function aniversariantes(pessoas: Pessoa[], dias = JANELA_DE_ANIVERSARIOS, agora = new Date()): Aniversariante[] {
-  return pessoas
-    .filter((pessoa) => pessoa.mostrarAniversario)
-    .map((pessoa) => ({ pessoa, faltam: diasAte(pessoa, agora), data: proximoAniversario(pessoa, agora) }))
-    .filter((item): item is Aniversariante => item.faltam !== undefined && item.data !== undefined && item.faltam <= dias)
-    .sort((a, b) => a.faltam - b.faltam || porNome(a.pessoa, b.pessoa))
-}
-
-// "Hoje", "Amanhã" ou "sex, 22/11".
-export function quandoFaz({ faltam, data }: Aniversariante): string {
-  if (faltam === 0) return 'Hoje'
-  if (faltam === 1) return 'Amanhã'
-  return `${DIAS_DA_SEMANA[data.getDay()]}, ${dois(data.getDate())}/${dois(data.getMonth() + 1)}`
 }
 
 // "Financeiro · ramal 2107"

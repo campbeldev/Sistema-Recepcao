@@ -137,25 +137,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Com os aniversariantes, são três colunas; na tela média, os aniversariantes descem para a largura toda. */
-.recepcao-meio-a-meio--tres {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (max-width: 90rem) {
-  .recepcao-meio-a-meio--tres {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .recepcao-meio-a-meio--tres > :last-child {
-    grid-column: 1 / -1;
-  }
-}
-
 @media (max-width: 66rem) {
   .recepcao-mosaico,
-  .recepcao-meio-a-meio,
-  .recepcao-meio-a-meio--tres {
+  .recepcao-meio-a-meio {
     grid-template-columns: minmax(0, 1fr);
   }
 
