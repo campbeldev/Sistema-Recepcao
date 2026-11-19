@@ -10,7 +10,7 @@ import {
   Tile,
 } from '@carbon/react'
 import type { ReactNode } from 'react'
-import { LinhaQueAbre, SegundaLinha } from 'campbel-ui'
+import { Etiqueta, LinhaQueAbre, SegundaLinha } from 'campbel-ui'
 import { api, mensagemDe } from '../comum/api'
 import { irPara } from '../comum/endereco'
 import { VAZIO, emHora, emNumero, hojeNaApi } from '../comum/formato'
@@ -19,6 +19,14 @@ import { SituacaoDaReuniao } from '../reunioes/SituacaoDaReuniao'
 import { ehHoje, nomeDaSala, nomesDe, porHorario, type Reuniao } from '../reunioes/tipos'
 import { SituacaoDoLembrete } from '../lembretes/SituacaoDoLembrete'
 import { naOrdem, paraHoje, quandoDo, type Lembrete } from '../lembretes/tipos'
+import {
+  JANELA_DE_ANIVERSARIOS,
+  aniversariantes,
+  ondeEncontrar,
+  quandoFaz,
+  type Aniversariante,
+  type Pessoa,
+} from '../ramais/tipos'
 import './Inicio.css'
 
 const COLUNAS = 5
@@ -189,9 +197,37 @@ function TabelaDeLembretes({ lembretes }: { lembretes: Lembrete[] }) {
   )
 }
 
+// Quem faz aniversário hoje e nos próximos dias; quem pediu para não divulgar fica de fora.
+function Aniversariantes({ itens }: { itens: Aniversariante[] }) {
+  const quantos = itens.length
+  return (
+    <Bloco titulo="Aniversariantes" contagem={`${quantos} nos próximos ${JANELA_DE_ANIVERSARIOS} dias`}>
+      <Table>
+        <TableBody>
+          {quantos === 0 && (
+            <TableRow>
+              <TableCell colSpan={2}>Nenhum aniversário nos próximos {JANELA_DE_ANIVERSARIOS} dias.</TableCell>
+            </TableRow>
+          )}
+          {itens.map((item) => (
+            <LinhaQueAbre key={item.pessoa.id} aoAbrir={() => irPara('/ramais')}>
+              <TableCell>
+                {item.pessoa.nome}
+                <SegundaLinha>{ondeEncontrar(item.pessoa)}</SegundaLinha>
+              </TableCell>
+              <TableCell>{item.faltam === 0 ? <Etiqueta>Hoje</Etiqueta> : quandoFaz(item)}</TableCell>
+            </LinhaQueAbre>
+          ))}
+        </TableBody>
+      </Table>
+    </Bloco>
+  )
+}
+
 export function Inicio() {
   const [reunioes, setReunioes] = useState<Reuniao[]>()
   const [lembretes, setLembretes] = useState<Lembrete[]>()
+  const [pessoas, setPessoas] = useState<Pessoa[]>()
   const [falha, setFalha] = useState<string>()
   const agora = useAgora()
 
@@ -204,6 +240,10 @@ export function Inicio() {
       .ler<Lembrete[]>('/api/lembretes')
       .then(setLembretes)
       .catch(() => setLembretes([]))
+    api
+      .ler<Pessoa[]>('/api/pessoas')
+      .then(setPessoas)
+      .catch(() => setPessoas([]))
   }, [])
 
   if (falha) {
@@ -250,9 +290,10 @@ export function Inicio() {
       ) : (
         <>
           <Mosaico proxima={proxima} outras={outrasDeHoje} agora={agora} />
-          <div className="recepcao-meio-a-meio">
+          <div className="recepcao-meio-a-meio recepcao-meio-a-meio--tres">
             <ProximosDias reunioes={agendadasProximas} />
             <TabelaDeLembretes lembretes={lembretesPendentes} />
+            <Aniversariantes itens={aniversariantes(pessoas ?? [], JANELA_DE_ANIVERSARIOS, agora)} />
           </div>
         </>
       )}
