@@ -22,6 +22,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/error", "/plataforma", "/plataforma/**", "/api/sessao").permitAll()
+                        // O pedido de almoço pelo link do grupo: cada pessoa pede sem ter conta no sistema.
+                        .requestMatchers("/almoco", "/api/almoco/publico", "/api/almoco/publico/**").permitAll()
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/reunioes/**", "/contatos/**").hasRole("ADMIN")
                         .anyRequest().hasAnyRole("ADMIN", "RECEPCIONISTA")

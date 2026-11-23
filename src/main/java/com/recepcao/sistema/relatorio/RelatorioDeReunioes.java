@@ -16,12 +16,27 @@ import com.recepcao.sistema.contato.ContatoRepository;
 import com.recepcao.sistema.reuniao.Reuniao;
 import com.recepcao.sistema.reuniao.ReuniaoRepository;
 import com.recepcao.sistema.reuniao.StatusReuniao;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.PrintSetup;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -32,18 +47,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * O relatório mensal de reuniões, em planilha (CSV separado por ponto e vírgula, que o Excel abre direto) ou em PDF.
+ * O relatório mensal de reuniões, em planilha do Excel (.xlsx) ou em PDF, os dois com o mesmo layout.
  */
 @Service
 public class RelatorioDeReunioes {
 
     private static final DateTimeFormatter DATA_E_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final Locale PT_BR = Locale.forLanguageTag("pt-BR");
-
-    // Quebra de linha do Windows, que o Excel lê sem surpresa.
-    private static final String LINHA = "\r\n";
-    // Marca de UTF-8 no começo do arquivo: sem ela o Excel lê os acentos errado ("RELATÃ“RIO").
-    private static final String MARCA_UTF8 = "﻿";
 
     private static final String[] CABECALHO = {"DATA", "TÍTULO", "SALA", "STATUS", "ANFITRIÃO", "PARTICIPANTES"};
 
@@ -98,9 +108,7 @@ public class RelatorioDeReunioes {
                 new String[]{"Agendadas", String.valueOf(contar(reunioes, StatusReuniao.AGENDADA))});
         List<String[]> linhas = reunioes.stream().map(RelatorioDeReunioes::colunas).toList();
 
-        return emPdf
-                ? emPdf(titulo, resumo, linhas)
-                : emPlanilha(titulo, resumo, linhas).getBytes(StandardCharsets.UTF_8);
+        return emPdf ? emPdf(titulo, resumo, linhas) : emPlanilha(titulo, resumo, linhas);
     }
 
     private static String[] colunas(Reuniao r) {
@@ -115,19 +123,135 @@ public class RelatorioDeReunioes {
                 participantes};
     }
 
-    // Planilha: cada rótulo do resumo na coluna A e o valor na B; depois a tabela, uma reunião por linha.
-    private static String emPlanilha(String titulo, List<String[]> resumo, List<String[]> linhas) {
-        StringBuilder csv = new StringBuilder(MARCA_UTF8);
-        csv.append(celula(titulo)).append(LINHA);
-        for (String[] item : resumo) {
-            csv.append(celula(item[0])).append(';').append(celula(item[1])).append(LINHA);
+    // Larguras das colunas na planilha (em caracteres), na mesma proporção da tabela do PDF.
+    private static final int[] LARGURAS = {18, 34, 18, 16, 30, 50};
+
+    /**
+     * Planilha: uma aba só, com o mesmo layout do PDF. Título grande no topo, o resumo com rótulo e valor
+     * em células separadas e depois a tabela, com o cabeçalho escuro, linhas listradas e bordas.
+     * Os textos entram como texto (setCellValue), então nada que o usuário digitou vira fórmula.
+     */
+    private static byte[] emPlanilha(String titulo, List<String[]> resumo, List<String[]> linhas) {
+        try (XSSFWorkbook planilha = new XSSFWorkbook(); ByteArrayOutputStream saida = new ByteArrayOutputStream()) {
+            XSSFSheet aba = planilha.createSheet("Relatório");
+            aba.setDisplayGridlines(false);
+            for (int i = 0; i < LARGURAS.length; i++) {
+                aba.setColumnWidth(i, LARGURAS[i] * 256);
+            }
+
+            CellStyle estiloTitulo = estilo(planilha, true, 16, null, null, false);
+            CellStyle estiloRotulo = estilo(planilha, true, 10, null, null, false);
+            CellStyle estiloValor = estilo(planilha, false, 10, null, null, false);
+            estiloValor.setAlignment(HorizontalAlignment.LEFT);
+            CellStyle estiloCabecalho = estilo(planilha, true, 10, new byte[]{(byte) 0xFF, (byte) 0xFF, (byte) 0xFF},
+                    new byte[]{0x16, 0x16, 0x16}, true);
+            CellStyle estiloCelula = estilo(planilha, false, 10, null, null, true);
+            CellStyle estiloListrada = estilo(planilha, false, 10, null,
+                    new byte[]{(byte) 0xF4, (byte) 0xF4, (byte) 0xF4}, true);
+            CellStyle estiloVazia = estilo(planilha, false, 10, null, null, true);
+            estiloVazia.setAlignment(HorizontalAlignment.CENTER);
+
+            int ultimaColuna = CABECALHO.length - 1;
+            int linha = 0;
+
+            // Título, mesclado na largura da tabela.
+            Row linhaTitulo = aba.createRow(linha);
+            linhaTitulo.setHeightInPoints(28);
+            escrever(linhaTitulo, 0, titulo, estiloTitulo);
+            aba.addMergedRegion(new CellRangeAddress(linha, linha, 0, ultimaColuna));
+            linha += 2;
+
+            // Resumo: rótulo na coluna A, valor na B.
+            for (String[] item : resumo) {
+                Row linhaResumo = aba.createRow(linha++);
+                escrever(linhaResumo, 0, item[0], estiloRotulo);
+                escrever(linhaResumo, 1, item[1], estiloValor);
+            }
+            linha++;
+
+            // Tabela.
+            int linhaDoCabecalho = linha;
+            Row cabecalho = aba.createRow(linha++);
+            cabecalho.setHeightInPoints(20);
+            for (int i = 0; i < CABECALHO.length; i++) {
+                escrever(cabecalho, i, CABECALHO[i], estiloCabecalho);
+            }
+
+            if (linhas.isEmpty()) {
+                Row vazia = aba.createRow(linha);
+                for (int i = 0; i <= ultimaColuna; i++) {
+                    escrever(vazia, i, i == 0 ? "Nenhuma reunião neste mês." : "", estiloVazia);
+                }
+                aba.addMergedRegion(new CellRangeAddress(linha, linha, 0, ultimaColuna));
+                linha++;
+            }
+            for (int i = 0; i < linhas.size(); i++) {
+                Row reuniao = aba.createRow(linha++);
+                CellStyle estiloDaLinha = i % 2 == 1 ? estiloListrada : estiloCelula;
+                String[] valores = linhas.get(i);
+                for (int c = 0; c < valores.length; c++) {
+                    escrever(reuniao, c, valores[c], estiloDaLinha);
+                }
+            }
+
+            if (!linhas.isEmpty()) {
+                aba.setAutoFilter(new CellRangeAddress(linhaDoCabecalho, linha - 1, 0, ultimaColuna));
+            }
+            // O cabeçalho da tabela fica fixo ao rolar e se repete em cada página impressa.
+            aba.createFreezePane(0, linhaDoCabecalho + 1);
+            aba.setRepeatingRows(new CellRangeAddress(linhaDoCabecalho, linhaDoCabecalho, -1, -1));
+
+            // Impressão igual ao PDF: A4 deitado, cabendo na largura da página.
+            PrintSetup impressao = aba.getPrintSetup();
+            impressao.setPaperSize(PrintSetup.A4_PAPERSIZE);
+            impressao.setLandscape(true);
+            impressao.setFitWidth((short) 1);
+            impressao.setFitHeight((short) 0);
+            aba.setFitToPage(true);
+
+            planilha.write(saida);
+            return saida.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Não foi possível gerar a planilha.", e);
         }
-        csv.append(LINHA);
-        csv.append(String.join(";", CABECALHO)).append(LINHA);
-        for (String[] linha : linhas) {
-            csv.append(Stream.of(linha).map(RelatorioDeReunioes::celula).collect(Collectors.joining(";"))).append(LINHA);
+    }
+
+    private static void escrever(Row linha, int coluna, String valor, CellStyle estilo) {
+        Cell celula = linha.createCell(coluna);
+        celula.setCellValue(valor == null ? "" : valor);
+        celula.setCellStyle(estilo);
+    }
+
+    private static CellStyle estilo(XSSFWorkbook planilha, boolean negrito, int tamanho,
+                                    byte[] corDaFonte, byte[] fundo, boolean comBorda) {
+        XSSFFont fonte = planilha.createFont();
+        fonte.setFontName("Arial");
+        fonte.setBold(negrito);
+        fonte.setFontHeightInPoints((short) tamanho);
+        if (corDaFonte != null) {
+            fonte.setColor(new XSSFColor(corDaFonte, null));
         }
-        return csv.toString();
+
+        XSSFCellStyle estilo = planilha.createCellStyle();
+        estilo.setFont(fonte);
+        estilo.setVerticalAlignment(VerticalAlignment.CENTER);
+        if (fundo != null) {
+            estilo.setFillForegroundColor(new XSSFColor(fundo, null));
+            estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        }
+        if (comBorda) {
+            estilo.setWrapText(true);
+            estilo.setBorderTop(BorderStyle.THIN);
+            estilo.setBorderBottom(BorderStyle.THIN);
+            estilo.setBorderLeft(BorderStyle.THIN);
+            estilo.setBorderRight(BorderStyle.THIN);
+            XSSFColor cinza = new XSSFColor(new byte[]{(byte) 0xBF, (byte) 0xBF, (byte) 0xBF}, null);
+            estilo.setTopBorderColor(cinza);
+            estilo.setBottomBorderColor(cinza);
+            estilo.setLeftBorderColor(cinza);
+            estilo.setRightBorderColor(cinza);
+        }
+        return estilo;
     }
 
     // PDF: A4 deitado, título, resumo e a tabela com o cabeçalho repetido em cada página.
@@ -199,17 +323,5 @@ public class RelatorioDeReunioes {
 
     private static String nomes(Stream<String> nomes) {
         return nomes.distinct().collect(Collectors.joining(", "));
-    }
-
-    /**
-     * Uma célula segura: entre aspas (para ";" e quebra de linha não abrirem coluna nova)
-     * e com apóstrofo antes de =, +, - e @, para o Excel não executar o texto como fórmula.
-     */
-    private static String celula(String valor) {
-        if (valor == null || valor.isEmpty()) {
-            return "";
-        }
-        String texto = "=+-@".indexOf(valor.charAt(0)) >= 0 ? "'" + valor : valor;
-        return '"' + texto.replace("\"", "\"\"") + '"';
     }
 }

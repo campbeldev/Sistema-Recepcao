@@ -16,7 +16,7 @@ const ANOS = Array.from({ length: 4 }, (_, i) => hoje.getFullYear() - 2 + i)
 export function Relatorio() {
   const [mes, setMes] = useState(String(hoje.getMonth() + 1))
   const [ano, setAno] = useState(String(hoje.getFullYear()))
-  const [formato, setFormato] = useState('csv')
+  const [formato, setFormato] = useState('xlsx')
   const [canceladas, setCanceladas] = useState('incluir')
   const [contatos, setContatos] = useState<Contato[]>([])
   const [contato, setContato] = useState<Contato | null>(null)
@@ -115,7 +115,7 @@ export function Relatorio() {
               onChange={(valor) => setFormato(String(valor))}
               helperText="A planilha abre direto no Excel. O PDF é para imprimir ou enviar."
             >
-              <RadioButton id="formato-csv" value="csv" labelText="Planilha (CSV)" />
+              <RadioButton id="formato-xlsx" value="xlsx" labelText="Planilha (Excel)" />
               <RadioButton id="formato-pdf" value="pdf" labelText="Documento (PDF)" />
             </RadioButtonGroup>
           </Column>
