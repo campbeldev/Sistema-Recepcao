@@ -4,6 +4,7 @@ import { emHora, hojeNaApi } from '../comum/formato'
 
 export type StatusReuniao = 'AGENDADA' | 'FINALIZADA' | 'CANCELADA'
 
+// Participante de fora (não está nos contatos) vem com o contato sem id, só com o nome.
 export type Pessoa = { id: number; contato: Contato }
 
 export type Reuniao = {

@@ -21,6 +21,7 @@ export function Relatorio() {
   const [contatos, setContatos] = useState<Contato[]>([])
   const [contato, setContato] = useState<Contato | null>(null)
   const [papel, setPapel] = useState('QUALQUER')
+  const [lembretes, setLembretes] = useState('excluir')
 
   useEffect(() => {
     api
@@ -36,6 +37,7 @@ export function Relatorio() {
       ano,
       tipo: formato,
       excluirCanceladas: String(canceladas === 'excluir'),
+      incluirLembretes: String(lembretes === 'incluir'),
     })
     if (contato) {
       consulta.set('contato', String(contato.id))
@@ -94,7 +96,7 @@ export function Relatorio() {
               <RadioButton id="papel-participante" value="PARTICIPANTE" labelText="Só como participante" />
             </RadioButtonGroup>
           </Column>
-          <Column sm={4} md={4} lg={5}>
+          <Column sm={4} md={4} lg={4}>
             <RadioButtonGroup
               legendText="Reuniões canceladas"
               name="relatorio-canceladas"
@@ -106,7 +108,20 @@ export function Relatorio() {
               <RadioButton id="canceladas-excluir" value="excluir" labelText="Ficam de fora" />
             </RadioButtonGroup>
           </Column>
-          <Column sm={4} md={8} lg={6}>
+          <Column sm={4} md={4} lg={4}>
+            <RadioButtonGroup
+              legendText="Lembretes do mês"
+              name="relatorio-lembretes"
+              orientation="vertical"
+              valueSelected={lembretes}
+              onChange={(valor) => setLembretes(String(valor))}
+              helperText="Entram numa tabela separada, depois das reuniões."
+            >
+              <RadioButton id="lembretes-excluir" value="excluir" labelText="Ficam de fora" />
+              <RadioButton id="lembretes-incluir" value="incluir" labelText="Entram no relatório" />
+            </RadioButtonGroup>
+          </Column>
+          <Column sm={4} md={4} lg={3}>
             <RadioButtonGroup
               legendText="Formato"
               name="relatorio-formato"

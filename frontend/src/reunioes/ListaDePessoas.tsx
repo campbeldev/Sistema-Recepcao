@@ -13,6 +13,15 @@ export function novaLinha(contato: Contato | null = null): Linha {
   return { chave: proximaChave++, contato }
 }
 
+// Quem não está nos contatos entra como um contato sem id, só com o nome (é assim que a API também devolve).
+export function deFora(nome: string): Contato {
+  return { id: 0, nomeParticipante: nome, nomeEmpresa: null, email: null, telefone: null, whatsapp: null }
+}
+
+export function ehDeFora(contato: Contato | null): boolean {
+  return Boolean(contato && !contato.id)
+}
+
 type Props = {
   id: string
   rotulo: string
@@ -20,11 +29,20 @@ type Props = {
   contatos: Contato[]
   linhas: Linha[]
   invalido?: string
+  // Aceita um nome digitado que não está nos contatos (participante de fora).
+  aceitaDeFora?: boolean
   aoMudar: (linhas: Linha[]) => void
 }
 
-export function ListaDePessoas({ id, rotulo, adicionar, contatos, linhas, invalido, aoMudar }: Props) {
+export function ListaDePessoas({ id, rotulo, adicionar, contatos, linhas, invalido, aceitaDeFora, aoMudar }: Props) {
   const escolhidos = new Set(linhas.map((linha) => linha.contato?.id))
+
+  // O ComboBox avisa o nome digitado como texto (ao sair do campo) ou como inputValue (ao apertar Enter).
+  function escolhaDe(selecionado: Contato | string | null | undefined, digitado?: string | null): Contato | null {
+    if (typeof selecionado === 'string') return aceitaDeFora && selecionado.trim() ? deFora(selecionado.trim()) : null
+    if (selecionado) return selecionado
+    return aceitaDeFora && digitado?.trim() ? deFora(digitado.trim()) : null
+  }
 
   function trocar(chave: number, contato: Contato | null) {
     aoMudar(linhas.map((linha) => (linha.chave === chave ? { ...linha, contato } : linha)))
@@ -38,15 +56,21 @@ export function ListaDePessoas({ id, rotulo, adicionar, contatos, linhas, invali
             <ComboBox<Contato>
               id={`${id}-${linha.chave}`}
               titleText={rotulo}
-              placeholder="Busque pelo nome ou pela empresa"
-              // Quem já está em outra linha não aparece de novo na lista.
-              items={contatos.filter((contato) => contato.id === linha.contato?.id || !escolhidos.has(contato.id))}
+              placeholder={aceitaDeFora ? 'Busque nos contatos ou digite o nome' : 'Busque pelo nome ou pela empresa'}
+              allowCustomValue={aceitaDeFora}
+              // Quem já está em outra linha não aparece de novo na lista; o de fora desta linha entra para ficar escolhido.
+              items={[
+                ...(linha.contato && ehDeFora(linha.contato) ? [linha.contato] : []),
+                ...contatos.filter((contato) => contato.id === linha.contato?.id || !escolhidos.has(contato.id)),
+              ]}
               itemToString={rotuloDo}
               selectedItem={linha.contato}
               shouldFilterItem={({ item, inputValue }) =>
                 combinaComBusca(inputValue ?? '', item.nomeParticipante, item.nomeEmpresa ?? '', item.email ?? '')
               }
-              onChange={({ selectedItem }) => trocar(linha.chave, selectedItem ?? null)}
+              onChange={({ selectedItem, inputValue }) =>
+                trocar(linha.chave, escolhaDe(selectedItem as Contato | string | null | undefined, inputValue))
+              }
               invalid={posicao === 0 && Boolean(invalido)}
               invalidText={invalido}
             />
