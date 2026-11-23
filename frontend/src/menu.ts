@@ -37,6 +37,11 @@ const MENU: Grupo[] = [
         descricao: 'As pessoas da empresa, com o setor, o ramal, o e-mail, o celular e o dia do aniversário.',
       },
       {
+        nome: 'Almoço',
+        endereco: '/almoco',
+        descricao: 'O cardápio de hoje, o pedido de cada pessoa e o PDF para o restaurante.',
+      },
+      {
         nome: 'Relatório',
         endereco: '/relatorio',
         descricao: 'As reuniões de um mês numa planilha, com a sala, a situação, quem recebeu e quem participou.',

@@ -12,6 +12,9 @@ import java.nio.charset.StandardCharsets;
 @RequestMapping("/api/relatorio")
 public class RelatorioController {
 
+    private static final MediaType XLSX =
+            MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
     private final RelatorioDeReunioes relatorioDeReunioes;
 
     public RelatorioController(RelatorioDeReunioes relatorioDeReunioes) {
@@ -21,15 +24,15 @@ public class RelatorioController {
     @GetMapping("/exportar")
     public ResponseEntity<byte[]> exportarRelatorio(@RequestParam int mes,
                                                     @RequestParam int ano,
-                                                    @RequestParam(defaultValue = "csv") String tipo,
+                                                    @RequestParam(defaultValue = "xlsx") String tipo,
                                                     @RequestParam(defaultValue = "false") boolean excluirCanceladas,
                                                     @RequestParam(required = false) Long contato,
                                                     @RequestParam(defaultValue = "QUALQUER") RelatorioDeReunioes.Papel papel) {
         boolean pdf = "pdf".equalsIgnoreCase(tipo);
         byte[] conteudo = relatorioDeReunioes.gerar(mes, ano, excluirCanceladas, contato, papel, pdf);
 
-        String arquivo = "relatorio_%s_%d.%s".formatted(RelatorioDeReunioes.nomeDoMes(mes), ano, pdf ? "pdf" : "csv");
-        MediaType formato = pdf ? MediaType.APPLICATION_PDF : new MediaType("text", "csv", StandardCharsets.UTF_8);
+        String arquivo = "relatorio_%s_%d.%s".formatted(RelatorioDeReunioes.nomeDoMes(mes), ano, pdf ? "pdf" : "xlsx");
+        MediaType formato = pdf ? MediaType.APPLICATION_PDF : XLSX;
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,

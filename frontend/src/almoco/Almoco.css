@@ -1,0 +1,81 @@
+/* O almoço: regras da Recepção, não do campbel-ui. */
+
+/* Os acompanhamentos são botões que marcam e desmarcam, lado a lado, quebrando a linha quando não cabem. */
+.recepcao-escolhas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.recepcao-escolhas .cds--btn {
+  padding-inline-end: 1rem;
+}
+
+.recepcao-escolhas + div {
+  margin-block-start: 0.5rem;
+}
+
+.recepcao-escolhas__erro {
+  color: var(--cds-text-error, #b91c1c);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+/* O cartão do cardápio, acima da tabela de pedidos. */
+.recepcao-cardapio {
+  display: grid;
+  gap: 1rem;
+}
+
+.recepcao-cardapio__linha {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.recepcao-cardapio__rotulo {
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+}
+
+/* A página do link, sem a casca: uma faixa preta no alto e o formulário numa coluna estreita. */
+.recepcao-pedir {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--cds-background, #f4f4f4);
+}
+
+.recepcao-pedir__faixa {
+  background: #161616;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.recepcao-pedir__faixa img {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.recepcao-pedir__faixa strong {
+  font-weight: 600;
+}
+
+.recepcao-pedir__faixa span {
+  color: #c6c6c6;
+  margin-inline-start: auto;
+}
+
+.recepcao-pedir__corpo {
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+.recepcao-pedir__corpo .cds--btn {
+  max-inline-size: none;
+}
+
+.recepcao-pedir__largo {
+  inline-size: 100%;
+}

@@ -24,6 +24,12 @@ public class EntradaController {
         return PLATAFORMA;
     }
 
+    /** O link que a recepção manda no grupo: a Plataforma mostra a tela de pedir o almoço, sem login. */
+    @GetMapping("/almoco")
+    public String almoco() {
+        return PLATAFORMA;
+    }
+
     /** A Plataforma lê /login?erro e /login?saiu e mostra a tela de entrada. */
     @GetMapping("/login")
     public String entrada(Authentication authentication) {

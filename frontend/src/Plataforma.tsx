@@ -11,6 +11,8 @@ import { Reunioes } from './reunioes/Reunioes'
 import { Contatos } from './contatos/Contatos'
 import { Lembretes } from './lembretes/Lembretes'
 import { Ramais } from './ramais/Ramais'
+import { Almoco } from './almoco/Almoco'
+import { PedidoDeAlmoco } from './almoco/PedidoDeAlmoco'
 import { Relatorio } from './relatorio/Relatorio'
 import { Usuarios } from './usuarios/Usuarios'
 import { avisosDoDia, type Reuniao } from './reunioes/tipos'
@@ -22,6 +24,7 @@ const ROTAS: Record<string, ComponentType> = {
   '/reunioes': Reunioes,
   '/contatos': Contatos,
   '/ramais': Ramais,
+  '/almoco': Almoco,
   '/lembretes': Lembretes,
   '/relatorio': Relatorio,
   '/usuarios': Usuarios,
@@ -82,6 +85,9 @@ export function Plataforma() {
     )
   }
   if (!sessao) return null
+
+  // O link do grupo do almoço abre sem login e sem a casca.
+  if (window.location.pathname === '/almoco') return <PedidoDeAlmoco />
 
   if (!sessao.usuario || window.location.pathname === '/login') {
     // A entrada ocupa a página toda, sem a casca: metade preta com a marca, metade com o formulário.
