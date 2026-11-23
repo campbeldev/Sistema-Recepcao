@@ -27,9 +27,10 @@ public class RelatorioController {
                                                     @RequestParam(defaultValue = "xlsx") String tipo,
                                                     @RequestParam(defaultValue = "false") boolean excluirCanceladas,
                                                     @RequestParam(required = false) Long contato,
-                                                    @RequestParam(defaultValue = "QUALQUER") RelatorioDeReunioes.Papel papel) {
+                                                    @RequestParam(defaultValue = "QUALQUER") RelatorioDeReunioes.Papel papel,
+                                                    @RequestParam(defaultValue = "false") boolean incluirLembretes) {
         boolean pdf = "pdf".equalsIgnoreCase(tipo);
-        byte[] conteudo = relatorioDeReunioes.gerar(mes, ano, excluirCanceladas, contato, papel, pdf);
+        byte[] conteudo = relatorioDeReunioes.gerar(mes, ano, excluirCanceladas, contato, papel, incluirLembretes, pdf);
 
         String arquivo = "relatorio_%s_%d.%s".formatted(RelatorioDeReunioes.nomeDoMes(mes), ano, pdf ? "pdf" : "xlsx");
         MediaType formato = pdf ? MediaType.APPLICATION_PDF : XLSX;

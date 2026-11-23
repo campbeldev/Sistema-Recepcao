@@ -110,7 +110,9 @@ public class ReuniaoService {
             reuniao.setStatus(entrada.status());
         }
         reuniao.definirAnfitrioes(entrada.idsDosAnfitrioes().stream().map(contatoService::buscarEntidade).toList());
-        reuniao.definirParticipantes(entrada.idsDosParticipantes().stream().map(contatoService::buscarEntidade).toList());
+        reuniao.definirParticipantes(
+                entrada.idsDosParticipantes().stream().map(contatoService::buscarEntidade).toList(),
+                entrada.participantesDeFora());
     }
 
     /** Duas reuniões não canceladas não podem ocupar a mesma sala no mesmo horário. Sem sala, não há o que conferir. */

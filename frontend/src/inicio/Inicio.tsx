@@ -235,7 +235,7 @@ export function Inicio() {
   const agendadasProximas = proximas.filter((reuniao) => reuniao.status === 'AGENDADA')
 
   return (
-    <Stack gap={5}>
+    <Stack gap={5} className="recepcao-inicio">
       <FaixaDeNumeros
         itens={[
           { valor: reunioes ? emNumero(deHoje.length) : VAZIO, rotulo: 'hoje' },

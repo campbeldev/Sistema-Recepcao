@@ -18,7 +18,7 @@ import { Acoes } from 'campbel-ui'
 import { api, camposDe, mensagemDe } from '../comum/api'
 import { HORARIOS, dataParaApi, emData } from '../comum/formato'
 import { porNome, type Contato } from '../contatos/tipos'
-import { ListaDePessoas, novaLinha, type Linha } from './ListaDePessoas'
+import { ListaDePessoas, ehDeFora, novaLinha, type Linha } from './ListaDePessoas'
 import { SALAS, type Reuniao } from './tipos'
 
 // A janela de agendar e de alterar uma reunião (molde do cadastro).
@@ -69,8 +69,13 @@ function valoresDe(reuniao?: Reuniao | null, participante?: Contato | null): Val
   }
 }
 
+// Contato vai pelo id; quem é de fora vai só com o nome.
 function idsDe(linhas: Linha[]) {
-  return linhas.filter((linha) => linha.contato).map((linha) => ({ contato: { id: linha.contato!.id } }))
+  return linhas
+    .filter((linha) => linha.contato)
+    .map((linha) =>
+      ehDeFora(linha.contato) ? { nome: linha.contato!.nomeParticipante } : { contato: { id: linha.contato!.id } },
+    )
 }
 
 export function CadastroDeReuniao({ aberto, reuniao, participante, aoFechar, aoGravar }: Props) {
@@ -103,7 +108,7 @@ export function CadastroDeReuniao({ aberto, reuniao, participante, aoFechar, aoG
     if (!valores.titulo.trim()) falta.titulo = 'Informe o título.'
     if (!valores.data) falta.data = 'Escolha o dia.'
     if (!valores.hora) falta.hora = 'Escolha a hora.'
-    if (!valores.anfitrioes.some((linha) => linha.contato)) falta.anfitrioes = 'Escolha quem recebe a reunião.'
+    if (!valores.anfitrioes.some((linha) => linha.contato && !ehDeFora(linha.contato))) falta.anfitrioes = 'Escolha quem recebe a reunião.'
     return falta
   }
 
@@ -256,6 +261,7 @@ export function CadastroDeReuniao({ aberto, reuniao, participante, aoFechar, aoG
             adicionar="Adicionar participante"
             contatos={contatos}
             linhas={valores.participantes}
+            aceitaDeFora
             aoMudar={(linhas) => mudar('participantes', linhas)}
           />
 

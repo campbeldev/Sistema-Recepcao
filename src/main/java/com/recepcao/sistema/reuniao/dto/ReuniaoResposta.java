@@ -22,7 +22,10 @@ public record ReuniaoResposta(
         List<Pessoa> participantes
 ) {
 
-    /** Um anfitrião ou participante: o id do vínculo e o contato. */
+    /**
+     * Um anfitrião ou participante: o id do vínculo e o contato. O participante de fora vem
+     * com um contato sem id, só com o nome, para as telas mostrarem do mesmo jeito.
+     */
     public record Pessoa(Long id, ContatoDados contato) {}
 
     public static ReuniaoResposta de(Reuniao reuniao) {
@@ -38,7 +41,9 @@ public record ReuniaoResposta(
                         .map(a -> new Pessoa(a.getId(), ContatoDados.de(a.getContato())))
                         .toList(),
                 reuniao.getParticipantes().stream()
-                        .map(p -> new Pessoa(p.getId(), ContatoDados.de(p.getContato())))
+                        .map(p -> new Pessoa(p.getId(), p.getContato() != null
+                                ? ContatoDados.de(p.getContato())
+                                : new ContatoDados(null, p.getNomeExterno(), null, null, null, null)))
                         .toList()
         );
     }

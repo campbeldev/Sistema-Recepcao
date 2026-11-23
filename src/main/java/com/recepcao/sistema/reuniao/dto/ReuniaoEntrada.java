@@ -12,6 +12,7 @@ import java.util.List;
 /**
  * O que a tela manda para criar ou alterar uma reunião.
  * Anfitriões e participantes chegam só com o id do contato: { "contato": { "id": 3 } }.
+ * O participante que não está nos contatos chega só com o nome: { "nome": "Fulano" }.
  */
 public record ReuniaoEntrada(
         @NotBlank(message = "Informe o título.") @Size(max = 255) String titulo,
@@ -24,7 +25,7 @@ public record ReuniaoEntrada(
         List<@Valid Vinculo> participantes
 ) {
 
-    public record Vinculo(@NotNull @Valid ContatoRef contato) {}
+    public record Vinculo(@Valid ContatoRef contato, @Size(max = 255) String nome) {}
 
     public record ContatoRef(@NotNull Long id) {}
 
@@ -36,7 +37,18 @@ public record ReuniaoEntrada(
         return ids(participantes);
     }
 
+    /** Os nomes dos participantes que não estão nos contatos. Anfitrião sempre é contato. */
+    public List<String> participantesDeFora() {
+        return participantes == null ? List.of() : participantes.stream()
+                .filter(v -> v.contato() == null && v.nome() != null && !v.nome().isBlank())
+                .map(Vinculo::nome)
+                .toList();
+    }
+
     private static List<Long> ids(List<Vinculo> vinculos) {
-        return vinculos == null ? List.of() : vinculos.stream().map(v -> v.contato().id()).toList();
+        return vinculos == null ? List.of() : vinculos.stream()
+                .filter(v -> v.contato() != null)
+                .map(v -> v.contato().id())
+                .toList();
     }
 }

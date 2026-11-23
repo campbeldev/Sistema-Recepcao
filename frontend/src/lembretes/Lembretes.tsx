@@ -20,6 +20,7 @@ import { Add } from '@carbon/icons-react'
 import { CampoDeBusca, Confirmacao, FiltroDaTabela, LinhaQueAbre, SegundaLinha, combinaComBusca } from 'campbel-ui'
 import { api, mensagemDe } from '../comum/api'
 import { VAZIO } from '../comum/formato'
+import { parametro } from '../comum/endereco'
 import { CadastroDeLembrete } from './CadastroDeLembrete'
 import { SituacaoDoLembrete } from './SituacaoDoLembrete'
 import { estaAtrasado, naOrdem, nomeDaSituacao, quandoDo, type Lembrete } from './tipos'
@@ -46,7 +47,11 @@ export function Lembretes() {
   const [falha, setFalha] = useState<string>()
   const [recusa, setRecusa] = useState<string>()
   const [busca, setBusca] = useState('')
-  const [situacao, setSituacao] = useState('')
+  // O pop-up dos atrasados abre esta tela com #/lembretes?situacao=atrasados.
+  const [situacao, setSituacao] = useState(() => {
+    const pedida = parametro('situacao') ?? ''
+    return SITUACOES.some((opcao) => opcao.valor === pedida) ? pedida : ''
+  })
   const [anotando, setAnotando] = useState(false)
   const [alterando, setAlterando] = useState<Lembrete | null>(null)
   const [aviso, setAviso] = useState<string>()

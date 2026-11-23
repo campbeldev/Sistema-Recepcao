@@ -1,0 +1,4 @@
+/* Tudo um pouco maior: o Carbon mede em rem, então subir a fonte da raiz (16px → 17px) aumenta a tela toda junto. */
+html {
+  font-size: 106.25%;
+}

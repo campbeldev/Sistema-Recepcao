@@ -28,6 +28,8 @@
 
 .recepcao-faixa span {
   color: var(--cds-text-secondary, #525252);
+  text-transform: uppercase;
+  letter-spacing: 0.32px;
 }
 
 /* A caixa branca de cada parte: título à esquerda, contagem à direita. */
@@ -147,4 +149,10 @@
     grid-column: auto;
     grid-row: auto;
   }
+}
+
+/* O Início fica ainda maior que o resto, para ler de longe no balcão. O zoom escala tudo (fontes, espaços, ícones)
+   na mesma proporção, por cima do aumento geral da plataforma. */
+.recepcao-inicio {
+  zoom: 1.1;
 }

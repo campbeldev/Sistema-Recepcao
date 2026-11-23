@@ -50,12 +50,20 @@ public class Reuniao {
                 .forEach(contato -> anfitrioes.add(new ReuniaoAnfitriao(this, contato)));
     }
 
-    /** Troca os participantes, ignorando contato repetido. */
-    public void definirParticipantes(List<Contato> contatos) {
+    /**
+     * Troca os participantes, ignorando contato repetido. Os de fora (só o nome) entram depois dos contatos,
+     * ignorando nome repetido, sem diferenciar maiúsculas.
+     */
+    public void definirParticipantes(List<Contato> contatos, List<String> deFora) {
         participantes.clear();
         contatos.stream()
                 .filter(distintos())
                 .forEach(contato -> participantes.add(new ReuniaoParticipante(this, contato)));
+        Set<String> vistos = new HashSet<>();
+        deFora.stream()
+                .map(String::trim)
+                .filter(nome -> !nome.isEmpty() && vistos.add(nome.toLowerCase()))
+                .forEach(nome -> participantes.add(new ReuniaoParticipante(this, nome)));
     }
 
     /** Mudar o horário faz o lembrete valer de novo. */
