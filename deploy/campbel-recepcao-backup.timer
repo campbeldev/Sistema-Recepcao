@@ -1,0 +1,11 @@
+[Unit]
+Description=Backup diario do banco da recepcao as 22h
+
+[Timer]
+# Horario de Brasilia (a VPS esta com o fuso America/Sao_Paulo)
+OnCalendar=*-*-* 22:00:00
+# Se a VPS estiver desligada as 22h, faz o backup assim que ligar
+Persistent=true
+
+[Install]
+WantedBy=timers.target

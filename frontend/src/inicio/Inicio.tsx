@@ -3,14 +3,10 @@ import {
   DataTableSkeleton,
   InlineNotification,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
   Tile,
 } from '@carbon/react'
 import type { ReactNode } from 'react'
-import { LinhaQueAbre, SegundaLinha } from 'campbel-ui'
+import { SegundaLinha } from 'campbel-ui'
 import { api, mensagemDe } from '../comum/api'
 import { irPara } from '../comum/endereco'
 import { VAZIO, emHora, emNumero, hojeNaApi } from '../comum/formato'
@@ -18,7 +14,7 @@ import { CartaoDaReuniao } from '../reunioes/CartaoDaReuniao'
 import { SituacaoDaReuniao } from '../reunioes/SituacaoDaReuniao'
 import { ehHoje, nomeDaSala, nomesDe, porHorario, type Reuniao } from '../reunioes/tipos'
 import { SituacaoDoLembrete } from '../lembretes/SituacaoDoLembrete'
-import { naOrdem, paraHoje, quandoDo, type Lembrete } from '../lembretes/tipos'
+import { horaDo, naOrdem, paraHoje, type Lembrete } from '../lembretes/tipos'
 import './Inicio.css'
 
 const COLUNAS = 5
@@ -157,34 +153,80 @@ function ProximosDias({ reunioes }: { reunioes: Reuniao[] }) {
   )
 }
 
-// Só os lembretes por fazer (atrasados, de hoje e dos próximos dias); os feitos ficam na tela de Lembretes.
-function TabelaDeLembretes({ lembretes }: { lembretes: Lembrete[] }) {
-  const porFazer = lembretes.length
+// O dia de um lembrete de outro dia: "25/11", em vermelho quando já passou.
+function DiaDoLembrete({ lembrete }: { lembrete: Lembrete }) {
+  const atrasado = lembrete.dia < hojeNaApi()
   return (
-    <Bloco titulo="Lembretes" contagem={porFazer === 1 ? '1 por fazer' : `${porFazer} por fazer`}>
-      <Table>
-        <TableBody>
-          {lembretes.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={2}>Nenhum lembrete pendente.</TableCell>
-            </TableRow>
-          )}
-          {lembretes.map((lembrete) => (
-            <LinhaQueAbre key={lembrete.id} aoAbrir={() => irPara('/lembretes')}>
-              <TableCell>
+    <span className={`recepcao-lembretes__dia${atrasado ? ' recepcao-lembretes__dia--atrasado' : ''}`}>
+      {lembrete.dia.slice(8, 10)}/{lembrete.dia.slice(5, 7)}
+    </span>
+  )
+}
+
+// Só os lembretes por fazer; os feitos ficam na tela de Lembretes (opção D escolhida em 2026-11-24).
+// Os de hoje em cima, em quadros com a hora grande, como os cartões de reunião;
+// os atrasados e os dos próximos dias embaixo, numa lista curta com a data.
+function BlocoDeLembretes({ lembretes }: { lembretes: Lembrete[] }) {
+  const hoje = hojeNaApi()
+  const deHoje = lembretes.filter((lembrete) => lembrete.dia === hoje)
+  const outros = lembretes.filter((lembrete) => lembrete.dia !== hoje)
+  const contagem = [
+    deHoje.length === 1 ? '1 hoje' : `${deHoje.length} hoje`,
+    outros.length === 1 ? '1 outro' : `${outros.length} outros`,
+  ].join(' · ')
+
+  return (
+    <Bloco titulo="Lembretes" contagem={contagem}>
+      {lembretes.length === 0 && (
+        <div className="recepcao-corpo">
+          <p>Nenhum lembrete pendente.</p>
+        </div>
+      )}
+      {deHoje.length > 0 && (
+        <div className="recepcao-lembretes__hoje">
+          {deHoje.map((lembrete) => {
+            const hora = horaDo(lembrete)
+            return (
+              <button
+                key={lembrete.id}
+                type="button"
+                className="recepcao-lembretes__cartao"
+                title="Ver lembretes"
+                onClick={() => irPara('/lembretes')}
+              >
+                <span className={hora ? 'recepcao-lembretes__hora' : 'recepcao-lembretes__hora recepcao-lembretes__hora--dia'}>
+                  {hora ?? 'Dia todo'}
+                </span>
+                <span>
+                  {lembrete.descricao}
+                  {lembrete.paraQuem && <SegundaLinha>Para {lembrete.paraQuem}</SegundaLinha>}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {outros.length > 0 && (
+        <>
+          <div className="recepcao-lembretes__rotulo">{deHoje.length > 0 ? 'Outros dias' : 'Próximos e atrasados'}</div>
+          {outros.map((lembrete) => (
+            <button
+              key={lembrete.id}
+              type="button"
+              className="recepcao-lembretes__linha"
+              title="Ver lembretes"
+              onClick={() => irPara('/lembretes')}
+            >
+              <DiaDoLembrete lembrete={lembrete} />
+              <span>
                 {lembrete.descricao}
-                <SegundaLinha>
-                  {quandoDo(lembrete)}
-                  {lembrete.paraQuem && ` · Para ${lembrete.paraQuem}`}
-                </SegundaLinha>
-              </TableCell>
-              <TableCell>
-                <SituacaoDoLembrete lembrete={lembrete} />
-              </TableCell>
-            </LinhaQueAbre>
+                {lembrete.paraQuem && <SegundaLinha>Para {lembrete.paraQuem}</SegundaLinha>}
+              </span>
+              <SituacaoDoLembrete lembrete={lembrete} />
+            </button>
           ))}
-        </TableBody>
-      </Table>
+        </>
+      )}
     </Bloco>
   )
 }
@@ -252,7 +294,7 @@ export function Inicio() {
           <Mosaico proxima={proxima} outras={outrasDeHoje} agora={agora} />
           <div className="recepcao-meio-a-meio">
             <ProximosDias reunioes={agendadasProximas} />
-            <TabelaDeLembretes lembretes={lembretesPendentes} />
+            <BlocoDeLembretes lembretes={lembretesPendentes} />
           </div>
         </>
       )}

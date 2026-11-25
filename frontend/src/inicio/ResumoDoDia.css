@@ -1,0 +1,205 @@
+/* O pop-up da entrada (opção B): faixa preta com o dia e as contagens à esquerda, a lista à direita. */
+
+.recepcao-resumo {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(22, 22, 22, 0.5);
+}
+
+.recepcao-resumo__janela {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  width: min(100%, 40rem);
+  max-height: calc(100vh - 2rem);
+  background: var(--cds-layer-01, #ffffff);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.recepcao-resumo__lado {
+  display: grid;
+  align-content: start;
+  gap: 1.5rem;
+  padding: 1.5rem 1.25rem;
+  background: #161616;
+  color: #ffffff;
+}
+
+.recepcao-resumo__dia {
+  font-size: 3.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.recepcao-resumo__mes,
+.recepcao-resumo__conta span {
+  color: #c6c6c6;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.32px;
+  text-transform: uppercase;
+}
+
+.recepcao-resumo__mes {
+  margin-top: 0.375rem;
+}
+
+.recepcao-resumo__conta {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.recepcao-resumo__conta strong {
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.recepcao-resumo__direita {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  max-height: calc(100vh - 2rem);
+}
+
+.recepcao-resumo__topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0.5rem 0.75rem 1.25rem;
+}
+
+.recepcao-resumo__topo h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.recepcao-resumo__fechar {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.recepcao-resumo__fechar:hover {
+  background: var(--cds-layer-hover-01, #e8e8e8);
+}
+
+.recepcao-resumo__corpo {
+  display: grid;
+  align-content: start;
+  gap: 1.25rem;
+  padding: 0 1.25rem 1.25rem;
+  overflow-y: auto;
+}
+
+.recepcao-resumo__corpo h3 {
+  margin: 0;
+  padding-bottom: 0.375rem;
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.32px;
+  text-transform: uppercase;
+}
+
+.recepcao-resumo__nada {
+  margin: 0;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--cds-border-subtle-01, #e0e0e0);
+  color: var(--cds-text-secondary, #525252);
+}
+
+.recepcao-resumo__item {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  width: 100%;
+  padding: 0.625rem 0.25rem;
+  border: 0;
+  border-top: 1px solid var(--cds-border-subtle-01, #e0e0e0);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.recepcao-resumo__item:hover {
+  background: var(--cds-layer-hover-01, #e8e8e8);
+}
+
+.recepcao-resumo__item > span:last-child {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.recepcao-resumo__item small {
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.32px;
+}
+
+.recepcao-resumo__hora {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.recepcao-resumo__hora--dia {
+  padding-top: 0.125rem;
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 400;
+}
+
+.recepcao-resumo__entendi {
+  height: 4rem;
+  padding: 0.875rem 1rem;
+  border: 0;
+  background: #161616;
+  color: #ffffff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.recepcao-resumo__entendi:hover {
+  background: #393939;
+}
+
+.recepcao-resumo__fechar:focus-visible,
+.recepcao-resumo__item:focus-visible,
+.recepcao-resumo__entendi:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: -2px;
+}
+
+/* No celular a faixa preta vai para cima. */
+@media (max-width: 36rem) {
+  .recepcao-resumo__janela {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+
+  .recepcao-resumo__lado {
+    grid-template-columns: auto auto auto;
+    align-items: end;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+  }
+
+  .recepcao-resumo__dia {
+    font-size: 2.5rem;
+  }
+}

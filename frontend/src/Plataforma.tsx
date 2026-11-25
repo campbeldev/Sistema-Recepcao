@@ -12,6 +12,7 @@ import { Reunioes } from './reunioes/Reunioes'
 import { Contatos } from './contatos/Contatos'
 import { Lembretes } from './lembretes/Lembretes'
 import { PerguntaDosAtrasados } from './lembretes/PerguntaDosAtrasados'
+import { ResumoDoDia, esqueceResumoDoDia } from './inicio/ResumoDoDia'
 import { Ramais } from './ramais/Ramais'
 import { Almoco } from './almoco/Almoco'
 import { PedidoDeAlmoco } from './almoco/PedidoDeAlmoco'
@@ -34,6 +35,8 @@ const ROTAS: Record<string, ComponentType> = {
 
 // Sair é um POST com o token CSRF, como o Spring Security pede.
 function sair() {
+  // A próxima entrada mostra o resumo do dia de novo.
+  esqueceResumoDoDia()
   const token = csrfAtual()
   const formulario = document.createElement('form')
   formulario.method = 'post'
@@ -57,6 +60,8 @@ export function Plataforma() {
   // Sobe quando o pop-up dos atrasados muda algum lembrete: a tela aberta e o sino recarregam.
   const [versao, setVersao] = useState(0)
   const [confirmacao, setConfirmacao] = useState<string>()
+  // Primeiro o resumo do dia; só depois dele a pergunta dos atrasados, para não abrir dois pop-ups juntos.
+  const [resumoVisto, setResumoVisto] = useState(false)
 
   // O sino mostra os aniversários de hoje, os lembretes de hoje e os atrasados, e as reuniões agendadas
   // que ainda vão acontecer hoje. Se uma das listas não carregar, o sino mostra as outras.
@@ -114,11 +119,15 @@ export function Plataforma() {
       >
         {confirmacao && <Confirmacao texto={confirmacao} aoFechar={() => setConfirmacao(undefined)} />}
         <Tela key={`${endereco}#${versao}`} />
-        <PerguntaDosAtrasados
-          usuario={usuario.username}
-          aoMudar={() => setVersao((atual) => atual + 1)}
-          aoTerminar={setConfirmacao}
-        />
+        {resumoVisto ? (
+          <PerguntaDosAtrasados
+            usuario={usuario.username}
+            aoMudar={() => setVersao((atual) => atual + 1)}
+            aoTerminar={setConfirmacao}
+          />
+        ) : (
+          <ResumoDoDia usuario={usuario.username} aoTerminar={() => setResumoVisto(true)} />
+        )}
       </Casca>
     </ContextoDaSessao.Provider>
   )
