@@ -40,6 +40,40 @@ jobs:
           DB_PASSWORD: postgres
         run: ./mvnw -B verify
 
+  # Deploy na VPS (Linux). O .jar é gerado aqui e vai direto por SSH:
+  # nada fica guardado no GitHub (sem upload-artifact, sem cota).
+  # Na VPS, a chave do deploy só consegue rodar /opt/campbel/recepcao/deploy.sh,
+  # que recebe o .jar, faz backup do banco, troca a versão e volta a anterior se não subir.
+  deploy-vps:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-vps
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - run: chmod +x mvnw
+      - name: Gerar jar
+        run: ./mvnw -B package -DskipTests
+      - name: Enviar para a VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "root@$VPS_HOST" < target/recepcao.jar
+
   deploy:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

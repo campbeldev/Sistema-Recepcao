@@ -1,0 +1,8 @@
+[Unit]
+Description=Backup diario do banco da recepcao
+After=postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/campbel/recepcao/backup.sh

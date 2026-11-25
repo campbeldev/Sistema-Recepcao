@@ -106,11 +106,17 @@
                             <artifactId>lombok</artifactId>
                         </path>
                     </annotationProcessorPaths>
-
+                </configuration>
+            </plugin>
+            <!-- O application-dev.properties tem a senha do banco local: fica em target/classes
+                 (para rodar na máquina de desenvolvimento), mas não entra no .jar que vai para o servidor. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
                     <excludes>
                         <exclude>application-dev.properties</exclude>
                     </excludes>
-
                 </configuration>
             </plugin>
             <plugin>
