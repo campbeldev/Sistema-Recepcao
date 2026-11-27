@@ -18,13 +18,11 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * O PDF que vai para o restaurante: o total de pratos, quantos de cada proteína e, para cada
- * proteína, quem pediu e com quais acompanhamentos. No fim, quantas porções de cada acompanhamento.
+ * O PDF que vai para o restaurante: quantos de cada proteína, numa faixa de quadros; depois uma lista
+ * só, em ordem de nome, com a proteína e os acompanhamentos de cada um, fechando com o total de pedidos.
  */
 final class PdfDoAlmoco {
 
@@ -50,7 +48,7 @@ final class PdfDoAlmoco {
         PdfWriter.getInstance(documento, saida);
         documento.open();
 
-        documento.add(new Paragraph("Pedido de almoço · Campbel", titulo));
+        documento.add(new Paragraph("Cardápio · Campbel", titulo));
         String situacao = cardapio.aberto()
                 ? "prévia, os pedidos ainda estão abertos até " + cardapio.fechaAs().format(HORA)
                 : "pedidos fechados";
@@ -73,23 +71,20 @@ final class PdfDoAlmoco {
         }
         documento.add(resumo);
 
-        // Uma tabela por proteína, com quem pediu.
-        for (String proteina : cardapio.proteinas()) {
-            List<PedidoDados> daProteina = pedidos.stream()
-                    .filter(p -> p.proteina().equals(proteina))
-                    .sorted(Comparator.comparing(PedidoDados::nome, String.CASE_INSENSITIVE_ORDER))
-                    .toList();
-            if (daProteina.isEmpty()) continue;
+        // Uma lista só, em ordem de nome, com a proteína de cada um na própria linha.
+        List<PedidoDados> emOrdem = pedidos.stream()
+                .sorted(Comparator.comparing(PedidoDados::nome, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        if (!emOrdem.isEmpty()) {
+            Paragraph pedidosTitulo = new Paragraph("Pedidos", secao);
+            pedidosTitulo.setSpacingBefore(16);
+            pedidosTitulo.setSpacingAfter(6);
+            documento.add(pedidosTitulo);
 
-            Paragraph nome = new Paragraph(proteina + " (" + daProteina.size() + ")", secao);
-            nome.setSpacingBefore(16);
-            nome.setSpacingAfter(6);
-            documento.add(nome);
-
-            PdfPTable tabela = new PdfPTable(new float[]{0.5f, 3f, 6f});
+            PdfPTable tabela = new PdfPTable(new float[]{0.5f, 3f, 2.2f, 5f});
             tabela.setWidthPercentage(100);
             tabela.setHeaderRows(1);
-            for (String titulo1 : List.of("#", "Nome", "Acompanhamentos")) {
+            for (String titulo1 : List.of("#", "Nome", "Proteína", "Acompanhamentos")) {
                 PdfPCell topo = new PdfPCell(new Phrase(titulo1, cabecalho));
                 topo.setBackgroundColor(CINZA);
                 topo.setBorderColor(BORDA);
@@ -97,9 +92,10 @@ final class PdfDoAlmoco {
                 tabela.addCell(topo);
             }
             int posicao = 1;
-            for (PedidoDados pedido : daProteina) {
+            for (PedidoDados pedido : emOrdem) {
                 tabela.addCell(celula(String.valueOf(posicao++), celula));
                 tabela.addCell(celula(pedido.nome(), celula));
+                tabela.addCell(celula(pedido.proteina(), celula));
                 Phrase acompanhamentos = new Phrase(
                         pedido.acompanhamentos().isEmpty() ? "Sem acompanhamento" : String.join(", ", pedido.acompanhamentos()),
                         celula);
@@ -111,26 +107,22 @@ final class PdfDoAlmoco {
                 detalhe.setPadding(5);
                 tabela.addCell(detalhe);
             }
-            documento.add(tabela);
-        }
 
-        // Quantas porções de cada acompanhamento, na ordem do cardápio.
-        Map<String, Integer> porcoes = new LinkedHashMap<>();
-        for (String acompanhamento : cardapio.acompanhamentos()) {
-            int quantos = (int) pedidos.stream().filter(p -> p.acompanhamentos().contains(acompanhamento)).count();
-            if (quantos > 0) porcoes.put(acompanhamento, quantos);
-        }
-        if (!porcoes.isEmpty()) {
-            Paragraph totais = new Paragraph("Total de acompanhamentos", secao);
-            totais.setSpacingBefore(16);
-            totais.setSpacingAfter(4);
-            documento.add(totais);
-            StringBuilder linha = new StringBuilder();
-            porcoes.forEach((nome, quantos) -> {
-                if (!linha.isEmpty()) linha.append("   ·   ");
-                linha.append(nome).append(": ").append(quantos);
-            });
-            documento.add(new Paragraph(linha.toString(), celula));
+            // A última linha da lista: o total de pedidos.
+            PdfPCell rotuloTotal = new PdfPCell(new Phrase("Total de pedidos", cabecalho));
+            rotuloTotal.setColspan(3);
+            rotuloTotal.setBackgroundColor(CINZA);
+            rotuloTotal.setBorderColor(BORDA);
+            rotuloTotal.setPadding(5);
+            rotuloTotal.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            tabela.addCell(rotuloTotal);
+            PdfPCell valorTotal = new PdfPCell(new Phrase(String.valueOf(emOrdem.size()), secao));
+            valorTotal.setBackgroundColor(CINZA);
+            valorTotal.setBorderColor(BORDA);
+            valorTotal.setPadding(5);
+            tabela.addCell(valorTotal);
+
+            documento.add(tabela);
         }
 
         if (pedidos.isEmpty()) {

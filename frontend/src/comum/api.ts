@@ -31,8 +31,13 @@ function sessaoExpirada(): never {
   throw new Recusa('A sessão expirou.', 401)
 }
 
-async function pedir<T>(metodo: string, endereco: string, corpo?: unknown): Promise<T> {
-  const cabecalhos: Record<string, string> = {}
+async function pedir<T>(
+  metodo: string,
+  endereco: string,
+  corpo?: unknown,
+  extras: Record<string, string> = {},
+): Promise<T> {
+  const cabecalhos: Record<string, string> = { ...extras }
   if (corpo !== undefined) cabecalhos['Content-Type'] = 'application/json'
   if (metodo !== 'GET' && csrf) cabecalhos[csrf.cabecalho] = csrf.token
 
@@ -77,11 +82,15 @@ async function pedir<T>(metodo: string, endereco: string, corpo?: unknown): Prom
   return (texto || null) as T
 }
 
+// O último argumento leva cabeçalhos a mais, como a chave do pedido de almoço.
 export const api = {
-  ler: <T>(endereco: string) => pedir<T>('GET', endereco),
-  gravar: <T>(endereco: string, corpo?: unknown) => pedir<T>('POST', endereco, corpo),
-  alterar: <T>(endereco: string, corpo?: unknown) => pedir<T>('PUT', endereco, corpo),
-  apagar: <T>(endereco: string) => pedir<T>('DELETE', endereco),
+  ler: <T>(endereco: string, cabecalhos?: Record<string, string>) => pedir<T>('GET', endereco, undefined, cabecalhos),
+  gravar: <T>(endereco: string, corpo?: unknown, cabecalhos?: Record<string, string>) =>
+    pedir<T>('POST', endereco, corpo, cabecalhos),
+  alterar: <T>(endereco: string, corpo?: unknown, cabecalhos?: Record<string, string>) =>
+    pedir<T>('PUT', endereco, corpo, cabecalhos),
+  apagar: <T>(endereco: string, cabecalhos?: Record<string, string>) =>
+    pedir<T>('DELETE', endereco, undefined, cabecalhos),
 }
 
 export function mensagemDe(erro: unknown): string {

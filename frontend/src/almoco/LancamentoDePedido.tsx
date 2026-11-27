@@ -1,23 +1,22 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Button, Column, ComboBox, Form, Grid, InlineNotification, Modal, Stack } from '@carbon/react'
-import { Acoes, combinaComBusca } from 'campbel-ui'
+import { Button, Column, Form, Grid, InlineNotification, Modal, Stack, TextInput } from '@carbon/react'
+import { Acoes } from 'campbel-ui'
 import { api, camposDe, mensagemDe } from '../comum/api'
 import { CamposDoPedido, PEDIDO_VAZIO, pedidoParaApi, valoresDoPedido, type ValoresDoPedido } from './CamposDoPedido'
-import type { Cardapio, Pedido, PessoaDoAlmoco } from './tipos'
+import type { Cardapio, Pedido } from './tipos'
 
 type Props = {
   aberto: boolean
   cardapio: Cardapio
   pedido: Pedido | null
-  semPedido: PessoaDoAlmoco[]
   aoFechar: () => void
   aoGravar: (pedido: Pedido, novo: boolean) => void
 }
 
 // A recepção lança o pedido de quem ligou ou falou pessoalmente, ou altera o de alguém.
 // Funciona mesmo depois de fechar: é o jeito de corrigir antes de mandar o PDF.
-export function LancamentoDePedido({ aberto, cardapio, pedido, semPedido, aoFechar, aoGravar }: Props) {
-  const [pessoa, setPessoa] = useState<PessoaDoAlmoco | null>(null)
+export function LancamentoDePedido({ aberto, cardapio, pedido, aoFechar, aoGravar }: Props) {
+  const [nome, setNome] = useState('')
   const [valores, setValores] = useState<ValoresDoPedido>(PEDIDO_VAZIO)
   const [recusa, setRecusa] = useState<string>()
   const [recusados, setRecusados] = useState<Record<string, string>>({})
@@ -25,7 +24,7 @@ export function LancamentoDePedido({ aberto, cardapio, pedido, semPedido, aoFech
 
   useEffect(() => {
     if (!aberto) return
-    setPessoa(null)
+    setNome(pedido?.nome ?? '')
     setValores(valoresDoPedido(pedido))
     setRecusa(undefined)
     setRecusados({})
@@ -33,9 +32,8 @@ export function LancamentoDePedido({ aberto, cardapio, pedido, semPedido, aoFech
 
   async function enviar(evento: FormEvent) {
     evento.preventDefault()
-    const pessoaId = pedido?.pessoaId ?? pessoa?.id
     const erros: Record<string, string> = {}
-    if (!pessoaId) erros.pessoa = 'Escolha a pessoa.'
+    if (!nome.trim()) erros.nome = 'Digite o nome.'
     if (!valores.proteina) erros.proteina = 'Escolha a proteína.'
     if (Object.keys(erros).length) {
       setRecusados(erros)
@@ -43,8 +41,11 @@ export function LancamentoDePedido({ aberto, cardapio, pedido, semPedido, aoFech
     }
     setEnviando(true)
     setRecusa(undefined)
+    const corpo = { nome: nome.trim(), ...pedidoParaApi(valores) }
     try {
-      const gravado = await api.alterar<Pedido>(`/api/almoco/hoje/pedidos/${pessoaId}`, pedidoParaApi(valores))
+      const gravado = pedido
+        ? await api.alterar<Pedido>(`/api/almoco/hoje/pedidos/${pedido.id}`, corpo)
+        : await api.gravar<Pedido>('/api/almoco/hoje/pedidos', corpo)
       aoGravar(gravado, !pedido)
     } catch (erro) {
       setRecusa(mensagemDe(erro))
@@ -58,7 +59,6 @@ export function LancamentoDePedido({ aberto, cardapio, pedido, semPedido, aoFech
     <Modal
       open={aberto}
       onRequestClose={aoFechar}
-      modalLabel={pedido?.setor}
       modalHeading={pedido ? `Alterar o pedido de ${pedido.nome}` : 'Lançar pedido'}
       closeButtonLabel="Fechar"
       passiveModal
@@ -78,30 +78,24 @@ export function LancamentoDePedido({ aberto, cardapio, pedido, semPedido, aoFech
               </Column>
             </Grid>
           )}
-          {!pedido && (
-            <Grid>
-              <Column sm={4} md={8} lg={16}>
-                <ComboBox<PessoaDoAlmoco>
-                  key={aberto ? 'aberto' : 'fechado'}
-                  id="lancamento-pessoa"
-                  data-modal-primary-focus
-                  titleText="Para quem"
-                  placeholder="Busque pelo nome"
-                  helperText="Só aparece quem ainda não pediu hoje. A lista vem de Ramais."
-                  items={semPedido}
-                  itemToString={(item) => (item ? `${item.nome} · ${item.setor}` : '')}
-                  shouldFilterItem={({ item, inputValue }) => combinaComBusca(inputValue ?? '', item.nome, item.setor)}
-                  selectedItem={pessoa}
-                  onChange={({ selectedItem }) => {
-                    setPessoa(selectedItem ?? null)
-                    setRecusados((antes) => ({ ...antes, pessoa: '' }))
-                  }}
-                  invalid={Boolean(recusados.pessoa)}
-                  invalidText={recusados.pessoa}
-                />
-              </Column>
-            </Grid>
-          )}
+          <Grid>
+            <Column sm={4} md={8} lg={16}>
+              <TextInput
+                id="lancamento-nome"
+                data-modal-primary-focus
+                labelText="Para quem"
+                placeholder="Nome e sobrenome"
+                maxLength={80}
+                value={nome}
+                onChange={(evento) => {
+                  setNome(evento.target.value)
+                  setRecusados((antes) => ({ ...antes, nome: '' }))
+                }}
+                invalid={Boolean(recusados.nome)}
+                invalidText={recusados.nome}
+              />
+            </Column>
+          </Grid>
           <Grid>
             <Column sm={4} md={8} lg={16}>
               <CamposDoPedido
@@ -111,7 +105,7 @@ export function LancamentoDePedido({ aberto, cardapio, pedido, semPedido, aoFech
                 erros={recusados}
                 aoMudar={(novos) => {
                   setValores(novos)
-                  setRecusados({})
+                  setRecusados((antes) => ({ nome: antes.nome ?? '' }))
                 }}
               />
             </Column>

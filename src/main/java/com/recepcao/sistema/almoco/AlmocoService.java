@@ -3,15 +3,12 @@ package com.recepcao.sistema.almoco;
 import com.recepcao.sistema.almoco.AlmocoDados.CardapioDados;
 import com.recepcao.sistema.almoco.AlmocoDados.CardapioEntrada;
 import com.recepcao.sistema.almoco.AlmocoDados.Painel;
+import com.recepcao.sistema.almoco.AlmocoDados.PedidoComChave;
 import com.recepcao.sistema.almoco.AlmocoDados.PedidoDados;
 import com.recepcao.sistema.almoco.AlmocoDados.PedidoEntrada;
-import com.recepcao.sistema.almoco.AlmocoDados.PessoaDoAlmoco;
-import com.recepcao.sistema.almoco.AlmocoDados.Publico;
 import com.recepcao.sistema.almoco.AlmocoDados.Sugestao;
 import com.recepcao.sistema.comum.erro.NaoEncontradoException;
 import com.recepcao.sistema.comum.erro.RegraDeNegocioException;
-import com.recepcao.sistema.pessoa.Pessoa;
-import com.recepcao.sistema.pessoa.PessoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,14 +20,18 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * O pedido de almoço do dia: a recepção publica o cardápio, cada pessoa pede pelo link até a hora de
  * fechar, e a recepção acompanha, lança o pedido de quem não conseguiu e gera o PDF para o restaurante.
+ *
+ * O link do dia leva um código sorteado e só funciona no próprio dia, enquanto os pedidos estão abertos.
+ * Quem pede pelo link digita o nome e recebe uma chave que fica no celular: só ela altera ou cancela o pedido.
  */
 @Service
 public class AlmocoService {
@@ -39,24 +40,17 @@ public class AlmocoService {
 
     private final CardapioRepository cardapioRepository;
     private final PedidoDeAlmocoRepository pedidoRepository;
-    private final PessoaRepository pessoaRepository;
     private final Clock relogio;
 
     @Autowired
-    public AlmocoService(CardapioRepository cardapioRepository,
-                         PedidoDeAlmocoRepository pedidoRepository,
-                         PessoaRepository pessoaRepository) {
-        this(cardapioRepository, pedidoRepository, pessoaRepository, Clock.systemDefaultZone());
+    public AlmocoService(CardapioRepository cardapioRepository, PedidoDeAlmocoRepository pedidoRepository) {
+        this(cardapioRepository, pedidoRepository, Clock.systemDefaultZone());
     }
 
     /** Com o relógio parado, para os testes. */
-    AlmocoService(CardapioRepository cardapioRepository,
-                  PedidoDeAlmocoRepository pedidoRepository,
-                  PessoaRepository pessoaRepository,
-                  Clock relogio) {
+    AlmocoService(CardapioRepository cardapioRepository, PedidoDeAlmocoRepository pedidoRepository, Clock relogio) {
         this.cardapioRepository = cardapioRepository;
         this.pedidoRepository = pedidoRepository;
-        this.pessoaRepository = pessoaRepository;
         this.relogio = relogio;
     }
 
@@ -70,7 +64,7 @@ public class AlmocoService {
 
     // ---------- a tela da recepção ----------
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Painel painelDeHoje() {
         var cardapio = cardapioRepository.findByDia(hoje()).orElse(null);
         if (cardapio == null) {
@@ -80,17 +74,13 @@ public class AlmocoService {
                             List.copyOf(anterior.getAcompanhamentos()),
                             anterior.getFechaAs()))
                     .orElse(null);
-            return new Painel(null, List.of(), List.of(), sugestao);
+            return new Painel(null, List.of(), sugestao);
         }
 
+        cardapio.garantirCodigoDoLink();
         List<PedidoDados> pedidos = pedidoRepository.findByCardapioIdOrderByFeitoEmAsc(cardapio.getId())
                 .stream().map(PedidoDados::de).toList();
-        Set<Long> jaPediram = pedidos.stream().map(PedidoDados::pessoaId).collect(Collectors.toSet());
-        List<PessoaDoAlmoco> semPedido = pessoaRepository.findByAtivoTrueOrderByNomeAsc().stream()
-                .filter(pessoa -> !jaPediram.contains(pessoa.getId()))
-                .map(PessoaDoAlmoco::de)
-                .toList();
-        return new Painel(CardapioDados.de(cardapio, agora()), pedidos, semPedido, null);
+        return new Painel(CardapioDados.de(cardapio, agora()), pedidos, null);
     }
 
     @Transactional
@@ -113,6 +103,7 @@ public class AlmocoService {
             }
         }
 
+        cardapio.garantirCodigoDoLink();
         cardapio.setProteinas(proteinas);
         cardapio.setAcompanhamentos(acompanhamentos);
         cardapio.setFechaAs(entrada.fechaAs());
@@ -147,16 +138,24 @@ public class AlmocoService {
         return LocalTime.of(arredondado / 60, arredondado % 60);
     }
 
-    /** A recepção lança ou altera o pedido de alguém, mesmo depois de fechar. */
+    /** A recepção lança o pedido de quem ligou ou falou pessoalmente, mesmo depois de fechar. */
     @Transactional
-    public PedidoDados lancar(Long pessoaId, PedidoEntrada entrada, String quem) {
-        return gravar(cardapioDeHoje(), pessoaId, entrada, quem);
+    public PedidoDados lancar(PedidoEntrada entrada, String quem) {
+        Cardapio cardapio = cardapioDeHoje();
+        return gravar(cardapio, new PedidoDeAlmoco(cardapio), entrada, quem);
+    }
+
+    /** A recepção altera o pedido de alguém, mesmo depois de fechar. */
+    @Transactional
+    public PedidoDados alterarPelaRecepcao(Long pedidoId, PedidoEntrada entrada, String quem) {
+        Cardapio cardapio = cardapioDeHoje();
+        return gravar(cardapio, pedidoDe(cardapio, pedidoId), entrada, quem);
     }
 
     @Transactional
-    public void cancelarPelaRecepcao(Long pessoaId) {
+    public void cancelarPelaRecepcao(Long pedidoId) {
         Cardapio cardapio = cardapioDeHoje();
-        pedidoRepository.delete(pedidoDe(cardapio, pessoaId));
+        pedidoRepository.delete(pedidoDe(cardapio, pedidoId));
     }
 
     @Transactional(readOnly = true)
@@ -169,36 +168,61 @@ public class AlmocoService {
 
     // ---------- o link público ----------
 
+    /** O cardápio do link. Fora do dia ou depois de fechar, o link não mostra nada. */
     @Transactional(readOnly = true)
-    public Publico publico() {
-        CardapioDados cardapio = cardapioRepository.findByDia(hoje())
-                .map(encontrado -> CardapioDados.de(encontrado, agora()))
-                .orElse(null);
-        List<PessoaDoAlmoco> pessoas = pessoaRepository.findByAtivoTrueOrderByNomeAsc().stream()
-                .map(PessoaDoAlmoco::de).toList();
-        return new Publico(cardapio, pessoas);
+    public CardapioDados publico(String codigo) {
+        return CardapioDados.de(cardapioDoLink(codigo), agora());
     }
 
+    /** O pedido de quem tem a chave; nulo se a chave não abre nenhum pedido de hoje. */
     @Transactional(readOnly = true)
-    public PedidoDados pedidoPublico(Long pessoaId) {
-        Cardapio cardapio = cardapioDeHoje();
-        return pedidoRepository.findByCardapioIdAndPessoaId(cardapio.getId(), pessoaId)
-                .map(PedidoDados::de)
-                .orElse(null);
+    public PedidoDados meuPedido(String codigo, String chave) {
+        Cardapio cardapio = cardapioDoLink(codigo);
+        return pedidoDaChave(cardapio, chave).map(PedidoDados::de).orElse(null);
+    }
+
+    /** Um pedido novo pelo link. A chave só sai daqui: o banco guarda apenas o resumo dela. */
+    @Transactional
+    public PedidoComChave pedirPeloLink(String codigo, PedidoEntrada entrada) {
+        Cardapio cardapio = cardapioDoLink(codigo);
+        String chave = ChaveAleatoria.nova();
+        PedidoDeAlmoco pedido = new PedidoDeAlmoco(cardapio);
+        pedido.setChaveHash(ChaveAleatoria.resumo(chave));
+        return new PedidoComChave(gravar(cardapio, pedido, entrada, null), chave);
     }
 
     @Transactional
-    public PedidoDados pedirPeloLink(Long pessoaId, PedidoEntrada entrada) {
-        Cardapio cardapio = cardapioDeHoje();
-        exigirAberto(cardapio);
-        return gravar(cardapio, pessoaId, entrada, null);
+    public PedidoDados alterarPeloLink(String codigo, String chave, PedidoEntrada entrada) {
+        Cardapio cardapio = cardapioDoLink(codigo);
+        return gravar(cardapio, pedidoDaChaveOuErro(cardapio, chave), entrada, null);
     }
 
     @Transactional
-    public void cancelarPeloLink(Long pessoaId) {
-        Cardapio cardapio = cardapioDeHoje();
+    public void cancelarPeloLink(String codigo, String chave) {
+        Cardapio cardapio = cardapioDoLink(codigo);
+        pedidoRepository.delete(pedidoDaChaveOuErro(cardapio, chave));
+    }
+
+    /** O cardápio de hoje pelo código do link, se os pedidos ainda estão abertos. */
+    private Cardapio cardapioDoLink(String codigo) {
+        Cardapio cardapio = codigo == null || codigo.isBlank() ? null
+                : cardapioRepository.findByCodigoDoLink(codigo).orElse(null);
+        if (cardapio == null || !cardapio.getDia().equals(hoje())) {
+            throw new NaoEncontradoException(
+                    "Este link não vale mais. Use o link de hoje, que a recepção manda no grupo.");
+        }
         exigirAberto(cardapio);
-        pedidoRepository.delete(pedidoDe(cardapio, pessoaId));
+        return cardapio;
+    }
+
+    private Optional<PedidoDeAlmoco> pedidoDaChave(Cardapio cardapio, String chave) {
+        if (chave == null || chave.isBlank()) return Optional.empty();
+        return pedidoRepository.findByCardapioIdAndChaveHash(cardapio.getId(), ChaveAleatoria.resumo(chave.trim()));
+    }
+
+    private PedidoDeAlmoco pedidoDaChaveOuErro(Cardapio cardapio, String chave) {
+        return pedidoDaChave(cardapio, chave).orElseThrow(() -> new NaoEncontradoException(
+                "Não encontramos o seu pedido neste celular. Se ele foi feito em outro aparelho, fale com a recepção."));
     }
 
     // ---------- regras comuns ----------
@@ -209,22 +233,20 @@ public class AlmocoService {
     }
 
     private void exigirAberto(Cardapio cardapio) {
-        if (!cardapio.aberto(agora())) {
-            throw new RegraDeNegocioException(
-                    "Os pedidos de hoje fecharam às " + cardapio.getFechaAs().format(HORA)
-                            + ". Para mudar alguma coisa, fale com a recepção.");
-        }
+        if (cardapio.aberto(agora())) return;
+        String quando = cardapio.isEncerrado()
+                ? "Os pedidos de hoje foram fechados pela recepção."
+                : "Os pedidos de hoje fecharam às " + cardapio.getFechaAs().format(HORA) + ".";
+        throw new RegraDeNegocioException(quando + " Para mudar alguma coisa, fale com a recepção.");
     }
 
-    private PedidoDeAlmoco pedidoDe(Cardapio cardapio, Long pessoaId) {
-        return pedidoRepository.findByCardapioIdAndPessoaId(cardapio.getId(), pessoaId)
-                .orElseThrow(() -> new NaoEncontradoException("Essa pessoa não fez pedido hoje."));
+    private PedidoDeAlmoco pedidoDe(Cardapio cardapio, Long pedidoId) {
+        return pedidoRepository.findByIdAndCardapioId(pedidoId, cardapio.getId())
+                .orElseThrow(() -> new NaoEncontradoException("Esse pedido não está na lista de hoje."));
     }
 
-    private PedidoDados gravar(Cardapio cardapio, Long pessoaId, PedidoEntrada entrada, String lancadoPor) {
-        Pessoa pessoa = pessoaRepository.findById(pessoaId)
-                .filter(Pessoa::isAtivo)
-                .orElseThrow(() -> new NaoEncontradoException("Pessoa não encontrada."));
+    private PedidoDados gravar(Cardapio cardapio, PedidoDeAlmoco pedido, PedidoEntrada entrada, String lancadoPor) {
+        String nome = entrada.nome().trim().replaceAll("\\s+", " ");
 
         String proteina = entrada.proteina().trim();
         if (!cardapio.getProteinas().contains(proteina)) {
@@ -243,16 +265,14 @@ public class AlmocoService {
         String observacao = entrada.observacao() == null || entrada.observacao().isBlank()
                 ? null : entrada.observacao().trim();
 
-        PedidoDeAlmoco pedido = pedidoRepository.findByCardapioIdAndPessoaId(cardapio.getId(), pessoaId)
-                .orElseGet(() -> new PedidoDeAlmoco(cardapio, pessoa));
-        pedido.preencher(proteina, acompanhamentos, observacao, agora(), lancadoPor);
+        pedido.preencher(nome, proteina, acompanhamentos, observacao, agora(), lancadoPor);
         return PedidoDados.de(pedidoRepository.save(pedido));
     }
 
     /** Sem espaços nas pontas, sem vazios e sem o mesmo nome duas vezes (maiúsculas não contam). */
     static List<String> semRepetir(List<String> nomes) {
         List<String> limpos = new ArrayList<>();
-        Set<String> vistos = new java.util.HashSet<>();
+        Set<String> vistos = new HashSet<>();
         if (nomes == null) return limpos;
         for (String nome : nomes) {
             if (nome == null || nome.isBlank()) continue;

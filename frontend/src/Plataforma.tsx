@@ -96,8 +96,8 @@ export function Plataforma() {
   }
   if (!sessao) return null
 
-  // O link do grupo do almoço abre sem login e sem a casca.
-  if (window.location.pathname === '/almoco') return <PedidoDeAlmoco />
+  // O link do grupo do almoço (/almoco/{código do dia}) abre sem login e sem a casca.
+  if (/^\/almoco(\/|$)/.test(window.location.pathname)) return <PedidoDeAlmoco />
 
   if (!sessao.usuario || window.location.pathname === '/login') {
     // A entrada ocupa a página toda, sem a casca: metade preta com a marca, metade com o formulário.

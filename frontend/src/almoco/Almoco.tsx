@@ -25,7 +25,17 @@ import { CancelamentoDePedido } from './CancelamentoDePedido'
 import { CardapioDoDia } from './CardapioDoDia'
 import { LancamentoDePedido } from './LancamentoDePedido'
 import { MensagemDoGrupo } from './MensagemDoGrupo'
-import { acompanhamentosDo, emLista, quantosDe, situacaoDo, type Cardapio, type Painel, type Pedido } from './tipos'
+import {
+  acompanhamentosDo,
+  emLista,
+  nomesRepetidos,
+  normalizado,
+  quantosDe,
+  situacaoDo,
+  type Cardapio,
+  type Painel,
+  type Pedido,
+} from './tipos'
 import './Almoco.css'
 
 const COLUNAS = 6
@@ -89,9 +99,10 @@ export function Almoco() {
     return <DataTableSkeleton columnCount={COLUNAS} showHeader={false} showToolbar={false} />
   }
 
-  const { cardapio, pedidos, semPedido } = painel
+  const { cardapio, pedidos } = painel
+  const repetidos = nomesRepetidos(pedidos)
   const encontrados = pedidos.filter((pedido) =>
-    combinaComBusca(busca, pedido.nome, pedido.setor, pedido.proteina, pedido.acompanhamentos.join(' '), pedido.observacao ?? ''),
+    combinaComBusca(busca, pedido.nome, pedido.proteina, pedido.acompanhamentos.join(' '), pedido.observacao ?? ''),
   )
 
   return (
@@ -156,7 +167,7 @@ export function Almoco() {
           <TableContainer>
             <TableToolbar>
               <TableToolbarContent>
-                <CampoDeBusca texto="Buscar por nome, setor, proteína ou acompanhamento" aoBuscar={setBusca} />
+                <CampoDeBusca texto="Buscar por nome, proteína ou acompanhamento" aoBuscar={setBusca} />
                 <Button renderIcon={Add} onClick={() => setLancando(true)}>
                   Lançar pedido
                 </Button>
@@ -185,7 +196,9 @@ export function Almoco() {
                   <TableRow key={pedido.id}>
                     <TableCell>
                       {pedido.nome}
-                      <SegundaLinha>{pedido.setor}</SegundaLinha>
+                      {repetidos.has(normalizado(pedido.nome)) && (
+                        <SegundaLinha>Nome repetido: confira se é a mesma pessoa</SegundaLinha>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Etiqueta>{pedido.proteina}</Etiqueta>
@@ -207,12 +220,6 @@ export function Almoco() {
               </TableBody>
             </Table>
           </TableContainer>
-
-          {semPedido.length > 0 && (
-            <p>
-              <strong>Ainda não pediram ({semPedido.length}):</strong> {semPedido.map((pessoa) => pessoa.nome).join(', ')}.
-            </p>
-          )}
         </>
       )}
 
@@ -232,7 +239,6 @@ export function Almoco() {
           aberto={lancando || alterando !== null}
           cardapio={cardapio}
           pedido={alterando}
-          semPedido={semPedido}
           aoFechar={() => {
             setLancando(false)
             setAlterando(null)

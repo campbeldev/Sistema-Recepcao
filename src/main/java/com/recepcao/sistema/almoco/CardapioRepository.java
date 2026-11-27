@@ -9,6 +9,8 @@ public interface CardapioRepository extends JpaRepository<Cardapio, Long> {
 
     Optional<Cardapio> findByDia(LocalDate dia);
 
+    Optional<Cardapio> findByCodigoDoLink(String codigoDoLink);
+
     /** O último cardápio antes de hoje, para a recepção começar o de hoje a partir dele. */
     Optional<Cardapio> findFirstByDiaBeforeOrderByDiaDesc(LocalDate dia);
 }
