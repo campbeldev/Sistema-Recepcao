@@ -24,8 +24,11 @@ public class EntradaController {
         return PLATAFORMA;
     }
 
-    /** O link que a recepção manda no grupo: a Plataforma mostra a tela de pedir o almoço, sem login. */
-    @GetMapping("/almoco")
+    /**
+     * O link que a recepção manda no grupo (/almoco/{código do dia}): a Plataforma mostra a tela de pedir
+     * o almoço, sem login. O /almoco sem código é o link antigo: a tela avisa que ele não vale mais.
+     */
+    @GetMapping({"/almoco", "/almoco/{codigo}"})
     public String almoco() {
         return PLATAFORMA;
     }

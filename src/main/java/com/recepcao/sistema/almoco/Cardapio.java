@@ -48,13 +48,25 @@ public class Cardapio {
     @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm;
 
+    /** O código no fim do link do dia (/almoco/{código}). Cada dia tem o seu: o link de ontem não abre o de hoje. */
+    @Column(name = "codigo_do_link", length = 32)
+    private String codigoDoLink;
+
     protected Cardapio() {}
 
     public Cardapio(LocalDate dia, String criadoPor, LocalDateTime criadoEm) {
         this.dia = dia;
         this.criadoPor = criadoPor;
         this.criadoEm = criadoEm;
+        this.codigoDoLink = ChaveAleatoria.nova();
     }
+
+    /** Os cardápios de antes do link com código ganham um na primeira vez que a recepção abre a tela. */
+    public void garantirCodigoDoLink() {
+        if (codigoDoLink == null) codigoDoLink = ChaveAleatoria.nova();
+    }
+
+    public String getCodigoDoLink() { return codigoDoLink; }
 
     /** Aberto até a hora de fechar, no próprio dia, se a recepção não fechou antes. */
     public boolean aberto(LocalDateTime agora) {

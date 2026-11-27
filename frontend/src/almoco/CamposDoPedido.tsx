@@ -1,17 +1,17 @@
 import { RadioButton, RadioButtonGroup, Stack, TextInput } from '@carbon/react'
 import { EscolhaDeAcompanhamentos } from './EscolhaDeAcompanhamentos'
-import type { Cardapio, PedidoEntrada } from './tipos'
+import type { Cardapio, PratoEntrada } from './tipos'
 
 export type ValoresDoPedido = { proteina: string; acompanhamentos: string[]; observacao: string }
 
 export const PEDIDO_VAZIO: ValoresDoPedido = { proteina: '', acompanhamentos: [], observacao: '' }
 
-export function valoresDoPedido(pedido?: PedidoEntrada | null): ValoresDoPedido {
+export function valoresDoPedido(pedido?: PratoEntrada | null): ValoresDoPedido {
   if (!pedido) return PEDIDO_VAZIO
   return { proteina: pedido.proteina, acompanhamentos: [...pedido.acompanhamentos], observacao: pedido.observacao ?? '' }
 }
 
-export function pedidoParaApi(valores: ValoresDoPedido): PedidoEntrada {
+export function pedidoParaApi(valores: ValoresDoPedido): PratoEntrada {
   return {
     proteina: valores.proteina,
     acompanhamentos: valores.acompanhamentos,

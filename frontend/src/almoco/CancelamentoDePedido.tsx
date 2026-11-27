@@ -26,7 +26,7 @@ export function CancelamentoDePedido({ pedido, aoFechar, aoCancelar }: Props) {
     setEnviando(true)
     setRecusa(undefined)
     try {
-      await api.apagar(`/api/almoco/hoje/pedidos/${pedido!.pessoaId}`)
+      await api.apagar(`/api/almoco/hoje/pedidos/${pedido!.id}`)
       aoCancelar(pedido!)
     } catch (erro) {
       setRecusa(mensagemDe(erro))

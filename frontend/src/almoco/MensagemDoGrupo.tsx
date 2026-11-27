@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Button, Column, Grid, Modal, Stack, TextArea } from '@carbon/react'
 import { Acoes } from 'campbel-ui'
-import { mensagemDoGrupo, type Cardapio } from './tipos'
+import { linkDoDia, mensagemDoGrupo, type Cardapio } from './tipos'
 
 type Props = {
   cardapio: Cardapio | null
@@ -16,7 +16,7 @@ export function MensagemDoGrupo({ cardapio, aoFechar, aoCopiar }: Props) {
   const [selecionado, setSelecionado] = useState(false)
 
   if (!cardapio) return null
-  const texto = mensagemDoGrupo(cardapio, `${window.location.origin}/almoco`)
+  const texto = mensagemDoGrupo(cardapio, linkDoDia(cardapio))
 
   async function copiar() {
     try {

@@ -34,6 +34,12 @@ public class TratadorDeErros {
         return new RespostaDeErro(e.getMessage(), e.getCampos());
     }
 
+    @ExceptionHandler(MuitasTentativasException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public RespostaDeErro muitasTentativas(MuitasTentativasException e) {
+        return new RespostaDeErro(e.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public RespostaDeErro camposInvalidos(MethodArgumentNotValidException e) {

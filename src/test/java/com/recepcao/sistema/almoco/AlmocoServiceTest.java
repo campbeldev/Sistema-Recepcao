@@ -1,10 +1,10 @@
 package com.recepcao.sistema.almoco;
 
+import com.recepcao.sistema.almoco.AlmocoDados.PedidoComChave;
 import com.recepcao.sistema.almoco.AlmocoDados.PedidoDados;
 import com.recepcao.sistema.almoco.AlmocoDados.PedidoEntrada;
+import com.recepcao.sistema.comum.erro.NaoEncontradoException;
 import com.recepcao.sistema.comum.erro.RegraDeNegocioException;
-import com.recepcao.sistema.pessoa.Pessoa;
-import com.recepcao.sistema.pessoa.PessoaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -18,9 +18,12 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-/** As regras de horário e de pedido do almoço, com o relógio parado e sem banco. */
+/** As regras de horário, do link do dia e da chave do pedido, com o relógio parado e sem banco. */
 class AlmocoServiceTest {
 
     private static final ZoneId FUSO = ZoneId.of("America/Sao_Paulo");
@@ -28,11 +31,14 @@ class AlmocoServiceTest {
 
     private final CardapioRepository cardapios = mock(CardapioRepository.class);
     private final PedidoDeAlmocoRepository pedidos = mock(PedidoDeAlmocoRepository.class);
-    private final PessoaRepository pessoas = mock(PessoaRepository.class);
 
     private AlmocoService servicoAs(int hora, int minuto) {
-        Clock relogio = Clock.fixed(LocalDateTime.of(HOJE, LocalTime.of(hora, minuto)).atZone(FUSO).toInstant(), FUSO);
-        return new AlmocoService(cardapios, pedidos, pessoas, relogio);
+        return servicoEm(HOJE, hora, minuto);
+    }
+
+    private AlmocoService servicoEm(LocalDate dia, int hora, int minuto) {
+        Clock relogio = Clock.fixed(LocalDateTime.of(dia, LocalTime.of(hora, minuto)).atZone(FUSO).toInstant(), FUSO);
+        return new AlmocoService(cardapios, pedidos, relogio);
     }
 
     private Cardapio cardapioDeHoje(LocalTime fechaAs) {
@@ -42,52 +48,131 @@ class AlmocoServiceTest {
         cardapio.setAcompanhamentos(List.of("Arroz", "Feijão de caldo", "Salada"));
         cardapio.setFechaAs(fechaAs);
         when(cardapios.findByDia(HOJE)).thenReturn(Optional.of(cardapio));
+        when(cardapios.findByCodigoDoLink(anyString())).thenReturn(Optional.empty());
+        when(cardapios.findByCodigoDoLink(cardapio.getCodigoDoLink())).thenReturn(Optional.of(cardapio));
+        when(pedidos.save(any())).thenAnswer(chamada -> chamada.getArgument(0));
         return cardapio;
     }
 
-    private void pessoaAtiva(long id, String nome) {
-        Pessoa pessoa = new Pessoa();
-        ReflectionTestUtils.setField(pessoa, "id", id);
-        pessoa.setNome(nome);
-        pessoa.setSetor("Financeiro");
-        when(pessoas.findById(id)).thenReturn(Optional.of(pessoa));
-        when(pedidos.findByCardapioIdAndPessoaId(1L, id)).thenReturn(Optional.empty());
-        when(pedidos.save(any())).thenAnswer(chamada -> chamada.getArgument(0));
+    private static PedidoEntrada pedido(String nome, String proteina, String... acompanhamentos) {
+        return new PedidoEntrada(nome, proteina, List.of(acompanhamentos), null);
     }
 
     @Test
     void oLinkAceitaAteAHoraDeFecharERecusaDepois() {
-        cardapioDeHoje(LocalTime.of(10, 0));
-        pessoaAtiva(7, "Juliana Costa");
-        PedidoEntrada frango = new PedidoEntrada("Frango ao molho", List.of("Arroz"), null);
+        Cardapio cardapio = cardapioDeHoje(LocalTime.of(10, 0));
+        String link = cardapio.getCodigoDoLink();
+        PedidoEntrada frango = pedido("Juliana Costa", "Frango ao molho", "Arroz");
 
-        assertEquals("Frango ao molho", servicoAs(9, 59).pedirPeloLink(7L, frango).proteina());
+        assertEquals("Frango ao molho", servicoAs(9, 59).pedirPeloLink(link, frango).pedido().proteina());
 
         RegraDeNegocioException recusa = assertThrows(RegraDeNegocioException.class,
-                () -> servicoAs(10, 0).pedirPeloLink(7L, frango));
+                () -> servicoAs(10, 0).pedirPeloLink(link, frango));
         assertTrue(recusa.getMessage().startsWith("Os pedidos de hoje fecharam às 10:00."));
+    }
+
+    @Test
+    void depoisDeFecharOLinkNaoMostraNemOCardapio() {
+        Cardapio cardapio = cardapioDeHoje(LocalTime.of(10, 0));
+
+        assertThrows(RegraDeNegocioException.class, () -> servicoAs(10, 5).publico(cardapio.getCodigoDoLink()));
+    }
+
+    @Test
+    void oLinkDeOntemNaoAbreHoje() {
+        Cardapio cardapio = cardapioDeHoje(LocalTime.of(10, 0));
+
+        assertThrows(NaoEncontradoException.class,
+                () -> servicoEm(HOJE.plusDays(1), 9, 0).publico(cardapio.getCodigoDoLink()));
+    }
+
+    @Test
+    void codigoInventadoNaoAbreNada() {
+        cardapioDeHoje(LocalTime.of(10, 0));
+
+        assertThrows(NaoEncontradoException.class, () -> servicoAs(9, 0).publico("qualquer-coisa"));
+        assertThrows(NaoEncontradoException.class, () -> servicoAs(9, 0).publico(""));
+    }
+
+    @Test
+    void cadaCardapioTemUmCodigoDiferente() {
+        Cardapio um = new Cardapio(HOJE, "talita", LocalDateTime.of(HOJE, LocalTime.of(8, 0)));
+        Cardapio outro = new Cardapio(HOJE.plusDays(1), "talita", LocalDateTime.of(HOJE, LocalTime.of(8, 0)));
+
+        assertEquals(22, um.getCodigoDoLink().length());
+        assertNotEquals(um.getCodigoDoLink(), outro.getCodigoDoLink());
+    }
+
+    @Test
+    void oBancoGuardaSoOResumoDaChave() {
+        Cardapio cardapio = cardapioDeHoje(LocalTime.of(10, 0));
+
+        PedidoComChave feito = servicoAs(9, 0).pedirPeloLink(cardapio.getCodigoDoLink(),
+                pedido("  Juliana   Costa ", "Lasanha"));
+
+        assertEquals("Juliana Costa", feito.pedido().nome());
+        verify(pedidos).save(argThat(salvo ->
+                salvo.getChaveHash().equals(ChaveAleatoria.resumo(feito.chave()))
+                        && !salvo.getChaveHash().equals(feito.chave())));
+    }
+
+    @Test
+    void semAChaveCertaNinguemAlteraOPedido() {
+        Cardapio cardapio = cardapioDeHoje(LocalTime.of(10, 0));
+        when(pedidos.findByCardapioIdAndChaveHash(eq(1L), anyString())).thenReturn(Optional.empty());
+        AlmocoService servico = servicoAs(9, 0);
+        String link = cardapio.getCodigoDoLink();
+
+        assertThrows(NaoEncontradoException.class,
+                () -> servico.alterarPeloLink(link, "chave-de-outra-pessoa", pedido("Juliana Costa", "Lasanha")));
+        assertThrows(NaoEncontradoException.class, () -> servico.cancelarPeloLink(link, null));
+        assertNull(servico.meuPedido(link, ""));
+        verify(pedidos, never()).delete(any());
+    }
+
+    @Test
+    void comAChaveCertaAPessoaAlteraOProprioPedido() {
+        Cardapio cardapio = cardapioDeHoje(LocalTime.of(10, 0));
+        PedidoDeAlmoco existente = new PedidoDeAlmoco(cardapio);
+        existente.preencher("Juliana Costa", "Lasanha", List.of(), null, LocalDateTime.of(HOJE, LocalTime.of(8, 30)), null);
+        when(pedidos.findByCardapioIdAndChaveHash(1L, ChaveAleatoria.resumo("minha-chave")))
+                .thenReturn(Optional.of(existente));
+
+        PedidoDados alterado = servicoAs(9, 0).alterarPeloLink(cardapio.getCodigoDoLink(), "minha-chave",
+                pedido("Juliana Costa", "Isca de carne", "Arroz"));
+
+        assertEquals("Isca de carne", alterado.proteina());
+        assertNull(alterado.lancadoPor());
     }
 
     @Test
     void depoisDeFecharARecepcaoAindaLancaPedido() {
         cardapioDeHoje(LocalTime.of(10, 0));
-        pessoaAtiva(7, "Juliana Costa");
 
-        PedidoDados lancado = servicoAs(11, 15).lancar(7L, new PedidoEntrada("Lasanha", List.of(), null), "talita");
+        PedidoDados lancado = servicoAs(11, 15).lancar(pedido("Juliana Costa", "Lasanha"), "talita");
 
         assertEquals("talita", lancado.lancadoPor());
+        assertEquals("Juliana Costa", lancado.nome());
+    }
+
+    @Test
+    void aRecepcaoSoMexeEmPedidoDoCardapioDeHoje() {
+        cardapioDeHoje(LocalTime.of(10, 0));
+        when(pedidos.findByIdAndCardapioId(anyLong(), eq(1L))).thenReturn(Optional.empty());
+
+        assertThrows(NaoEncontradoException.class, () -> servicoAs(9, 0).cancelarPelaRecepcao(99L));
     }
 
     @Test
     void fecharAntesDaHoraBloqueiaOLink() {
-        cardapioDeHoje(LocalTime.of(10, 0));
-        pessoaAtiva(7, "Juliana Costa");
+        Cardapio cardapio = cardapioDeHoje(LocalTime.of(10, 0));
         AlmocoService servico = servicoAs(9, 30);
 
         servico.fechar();
 
-        assertThrows(RegraDeNegocioException.class,
-                () -> servico.pedirPeloLink(7L, new PedidoEntrada("Lasanha", List.of(), null)));
+        RegraDeNegocioException recusa = assertThrows(RegraDeNegocioException.class,
+                () -> servico.pedirPeloLink(cardapio.getCodigoDoLink(), pedido("Juliana Costa", "Lasanha")));
+        assertTrue(recusa.getMessage().startsWith("Os pedidos de hoje foram fechados pela recepção."));
     }
 
     @Test
@@ -119,14 +204,13 @@ class AlmocoServiceTest {
 
     @Test
     void acompanhamentosFicamNaOrdemDoCardapio() {
-        cardapioDeHoje(LocalTime.of(10, 0));
-        pessoaAtiva(7, "Juliana Costa");
+        Cardapio cardapio = cardapioDeHoje(LocalTime.of(10, 0));
 
-        PedidoDados pedido = servicoAs(9, 0).pedirPeloLink(7L,
-                new PedidoEntrada("Frango ao molho", List.of("Salada", "Arroz", "arroz "), "  "));
+        PedidoDados feito = servicoAs(9, 0).pedirPeloLink(cardapio.getCodigoDoLink(),
+                new PedidoEntrada("Juliana Costa", "Frango ao molho", List.of("Salada", "Arroz", "arroz "), "  ")).pedido();
 
-        assertEquals(List.of("Arroz", "Salada"), pedido.acompanhamentos());
-        assertNull(pedido.observacao());
+        assertEquals(List.of("Arroz", "Salada"), feito.acompanhamentos());
+        assertNull(feito.observacao());
     }
 
     @Test

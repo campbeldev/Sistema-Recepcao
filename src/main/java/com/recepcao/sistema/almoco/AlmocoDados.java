@@ -1,6 +1,5 @@
 package com.recepcao.sistema.almoco;
 
-import com.recepcao.sistema.pessoa.Pessoa;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -26,6 +25,8 @@ public final class AlmocoDados {
 
     /** O pedido de uma pessoa, feito por ela pelo link ou lançado pela recepção. */
     public record PedidoEntrada(
+            @NotBlank(message = "Digite o nome.")
+            @Size(max = 80, message = "O nome tem no máximo 80 letras.") String nome,
             @NotBlank(message = "Escolha a proteína.") String proteina,
             List<String> acompanhamentos,
             @Size(max = 200, message = "A observação tem no máximo 200 letras.") String observacao
@@ -38,7 +39,8 @@ public final class AlmocoDados {
             List<String> acompanhamentos,
             LocalTime fechaAs,
             boolean aberto,
-            boolean encerrado
+            boolean encerrado,
+            String codigoDoLink
     ) {
         static CardapioDados de(Cardapio cardapio, LocalDateTime agora) {
             return new CardapioDados(
@@ -48,16 +50,15 @@ public final class AlmocoDados {
                     List.copyOf(cardapio.getAcompanhamentos()),
                     cardapio.getFechaAs(),
                     cardapio.aberto(agora),
-                    cardapio.isEncerrado()
+                    cardapio.isEncerrado(),
+                    cardapio.getCodigoDoLink()
             );
         }
     }
 
     public record PedidoDados(
             Long id,
-            Long pessoaId,
             String nome,
-            String setor,
             String proteina,
             List<String> acompanhamentos,
             String observacao,
@@ -67,9 +68,7 @@ public final class AlmocoDados {
         static PedidoDados de(PedidoDeAlmoco pedido) {
             return new PedidoDados(
                     pedido.getId(),
-                    pedido.getPessoa().getId(),
-                    pedido.getPessoa().getNome(),
-                    pedido.getPessoa().getSetor(),
+                    pedido.getNome(),
                     pedido.getProteina(),
                     List.copyOf(pedido.getAcompanhamentos()),
                     pedido.getObservacao(),
@@ -79,24 +78,16 @@ public final class AlmocoDados {
         }
     }
 
-    /** Só o que o link público precisa mostrar de cada pessoa. */
-    public record PessoaDoAlmoco(Long id, String nome, String setor) {
-        static PessoaDoAlmoco de(Pessoa pessoa) {
-            return new PessoaDoAlmoco(pessoa.getId(), pessoa.getNome(), pessoa.getSetor());
-        }
-    }
+    /** O pedido que acabou de ser feito pelo link e a chave que o celular guarda para alterar ou cancelar. */
+    public record PedidoComChave(PedidoDados pedido, String chave) {}
 
     /** As listas do último cardápio, para a recepção não digitar tudo de novo. */
     public record Sugestao(List<String> proteinas, List<String> acompanhamentos, LocalTime fechaAs) {}
 
-    /** A tela Almoço da recepção: o cardápio de hoje (ou nulo), os pedidos e quem ainda não pediu. */
+    /** A tela Almoço da recepção: o cardápio de hoje (ou nulo) e os pedidos. */
     public record Painel(
             CardapioDados cardapio,
             List<PedidoDados> pedidos,
-            List<PessoaDoAlmoco> semPedido,
             Sugestao sugestao
     ) {}
-
-    /** O que o link público recebe: o cardápio de hoje (ou nulo) e os nomes para escolher. */
-    public record Publico(CardapioDados cardapio, List<PessoaDoAlmoco> pessoas) {}
 }

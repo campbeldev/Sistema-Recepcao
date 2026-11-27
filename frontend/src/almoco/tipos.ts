@@ -6,13 +6,13 @@ export type Cardapio = {
   fechaAs: string
   aberto: boolean
   encerrado: boolean
+  // O fim do link do dia: /almoco/{codigoDoLink}.
+  codigoDoLink: string
 }
 
 export type Pedido = {
   id: number
-  pessoaId: number
   nome: string
-  setor: string
   proteina: string
   acompanhamentos: string[]
   observacao: string | null
@@ -20,20 +20,21 @@ export type Pedido = {
   lancadoPor: string | null
 }
 
-export type PessoaDoAlmoco = { id: number; nome: string; setor: string }
+// O pedido feito pelo link volta com a chave que o celular guarda para alterar ou cancelar.
+export type PedidoComChave = { pedido: Pedido; chave: string }
 
 export type Sugestao = { proteinas: string[]; acompanhamentos: string[]; fechaAs: string }
 
 export type Painel = {
   cardapio: Cardapio | null
   pedidos: Pedido[]
-  semPedido: PessoaDoAlmoco[]
   sugestao: Sugestao | null
 }
 
-export type Publico = { cardapio: Cardapio | null; pessoas: PessoaDoAlmoco[] }
+// O prato: o mesmo no link do grupo e na janela da recepção.
+export type PratoEntrada = { proteina: string; acompanhamentos: string[]; observacao: string | null }
 
-export type PedidoEntrada = { proteina: string; acompanhamentos: string[]; observacao: string | null }
+export type PedidoEntrada = PratoEntrada & { nome: string }
 
 // A API manda a hora como "10:00:00".
 export function emHoraCurta(hora: string): string {
@@ -58,6 +59,11 @@ export function acompanhamentosDo(pedido: { acompanhamentos: string[] }): string
   return pedido.acompanhamentos.length ? pedido.acompanhamentos.join(', ') : 'Sem acompanhamento'
 }
 
+// O link do dia, com o código que só vale hoje.
+export function linkDoDia(cardapio: Cardapio): string {
+  return `${window.location.origin}/almoco/${cardapio.codigoDoLink}`
+}
+
 // O texto que a recepção cola no grupo do WhatsApp.
 export function mensagemDoGrupo(cardapio: Cardapio, endereco: string): string {
   const [, mes, dia] = cardapio.dia.split('-')
@@ -70,4 +76,20 @@ export function mensagemDoGrupo(cardapio: Cardapio, endereco: string): string {
 
 export function quantosDe(pedidos: Pedido[], proteina: string): number {
   return pedidos.filter((pedido) => pedido.proteina === proteina).length
+}
+
+// Nomes que aparecem mais de uma vez na lista: a recepção confere se é a mesma pessoa pedindo duas vezes.
+export function nomesRepetidos(pedidos: Pedido[]): Set<string> {
+  const vistos = new Set<string>()
+  const repetidos = new Set<string>()
+  for (const pedido of pedidos) {
+    const nome = normalizado(pedido.nome)
+    if (vistos.has(nome)) repetidos.add(nome)
+    vistos.add(nome)
+  }
+  return repetidos
+}
+
+export function normalizado(nome: string): string {
+  return nome.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase().replace(/\s+/g, ' ')
 }

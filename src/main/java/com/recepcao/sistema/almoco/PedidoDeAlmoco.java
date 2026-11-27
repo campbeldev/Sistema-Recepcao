@@ -7,10 +7,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/** O prato de uma pessoa num dia: uma proteína e os acompanhamentos. Um pedido por pessoa e por cardápio. */
+/**
+ * O prato de uma pessoa num dia: o nome que ela digitou, uma proteína e os acompanhamentos.
+ * Quem pede pelo link recebe uma chave que fica no celular; só com ela dá para alterar ou cancelar.
+ */
 @Entity
-@Table(name = "pedido_de_almoco", uniqueConstraints = @UniqueConstraint(
-        name = "uk_pedido_cardapio_pessoa", columnNames = {"cardapio_id", "pessoa_id"}))
+@Table(name = "pedido_de_almoco")
 public class PedidoDeAlmoco {
 
     @Id
@@ -21,9 +23,17 @@ public class PedidoDeAlmoco {
     @JoinColumn(name = "cardapio_id")
     private Cardapio cardapio;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    /** Só nos pedidos de antes do nome digitado, quando a pessoa escolhia o nome na lista de Ramais. */
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pessoa_id")
     private Pessoa pessoa;
+
+    @Column(length = 80)
+    private String nome;
+
+    /** O resumo SHA-256 da chave que ficou no celular de quem pediu; nulo quando a recepção lançou. */
+    @Column(name = "chave_hash", length = 64)
+    private String chaveHash;
 
     @Column(nullable = false, length = 60)
     private String proteina;
@@ -40,20 +50,27 @@ public class PedidoDeAlmoco {
     @Column(name = "feito_em", nullable = false)
     private LocalDateTime feitoEm;
 
-    /** O login de quem lançou pela recepção; nulo quando a própria pessoa pediu pelo link. */
+    /** O login de quem lançou ou alterou pela recepção; nulo quando a própria pessoa pediu pelo link. */
     @Column(name = "lancado_por", length = 60)
     private String lancadoPor;
 
     protected PedidoDeAlmoco() {}
 
-    public PedidoDeAlmoco(Cardapio cardapio, Pessoa pessoa) {
+    public PedidoDeAlmoco(Cardapio cardapio) {
         this.cardapio = cardapio;
-        this.pessoa = pessoa;
     }
 
     public Long getId() { return id; }
     public Cardapio getCardapio() { return cardapio; }
-    public Pessoa getPessoa() { return pessoa; }
+
+    /** O nome digitado; nos pedidos antigos, o nome da pessoa do Ramal. */
+    public String getNome() {
+        if (nome != null) return nome;
+        return pessoa != null ? pessoa.getNome() : "";
+    }
+
+    public String getChaveHash() { return chaveHash; }
+    public void setChaveHash(String chaveHash) { this.chaveHash = chaveHash; }
 
     public String getProteina() { return proteina; }
     public List<String> getAcompanhamentos() { return acompanhamentos; }
@@ -61,8 +78,9 @@ public class PedidoDeAlmoco {
     public LocalDateTime getFeitoEm() { return feitoEm; }
     public String getLancadoPor() { return lancadoPor; }
 
-    public void preencher(String proteina, List<String> acompanhamentos, String observacao,
+    public void preencher(String nome, String proteina, List<String> acompanhamentos, String observacao,
                           LocalDateTime quando, String lancadoPor) {
+        this.nome = nome;
         this.proteina = proteina;
         this.acompanhamentos.clear();
         this.acompanhamentos.addAll(acompanhamentos);

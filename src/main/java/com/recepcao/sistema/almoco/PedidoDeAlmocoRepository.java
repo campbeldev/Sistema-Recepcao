@@ -9,7 +9,9 @@ public interface PedidoDeAlmocoRepository extends JpaRepository<PedidoDeAlmoco, 
 
     List<PedidoDeAlmoco> findByCardapioIdOrderByFeitoEmAsc(Long cardapioId);
 
-    Optional<PedidoDeAlmoco> findByCardapioIdAndPessoaId(Long cardapioId, Long pessoaId);
+    Optional<PedidoDeAlmoco> findByIdAndCardapioId(Long id, Long cardapioId);
+
+    Optional<PedidoDeAlmoco> findByCardapioIdAndChaveHash(Long cardapioId, String chaveHash);
 
     boolean existsByCardapioIdAndProteina(Long cardapioId, String proteina);
 }

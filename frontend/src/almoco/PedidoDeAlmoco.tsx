@@ -1,42 +1,66 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Button, ComboBox, Form, InlineLoading, InlineNotification, Stack } from '@carbon/react'
-import { combinaComBusca } from 'campbel-ui'
+import { Button, Form, InlineLoading, InlineNotification, Stack, TextInput } from '@carbon/react'
 import { api, camposDe, mensagemDe } from '../comum/api'
 import { CamposDoPedido, PEDIDO_VAZIO, pedidoParaApi, valoresDoPedido, type ValoresDoPedido } from './CamposDoPedido'
-import { acompanhamentosDo, emHoraCurta, situacaoDo, type Pedido, type PessoaDoAlmoco, type Publico } from './tipos'
+import { acompanhamentosDo, emHoraCurta, situacaoDo, type Cardapio, type Pedido, type PedidoComChave } from './tipos'
 import './Almoco.css'
 
 const SIMBOLO = '/plataforma/campbel/campbel-simbolo.png'
-// O celular lembra quem é a pessoa, para ela não procurar o nome todo dia.
-const LEMBRAR = 'recepcao-almoco-pessoa'
+const CABECALHO_DA_CHAVE = 'X-Chave-Do-Pedido'
+// A chave do pedido de hoje fica neste celular: só com ela dá para alterar ou cancelar.
+const LEMBRAR_PEDIDO = 'recepcao-almoco-pedido'
+// O nome digitado, para não digitar de novo amanhã.
+const LEMBRAR_NOME = 'recepcao-almoco-nome'
+const LINK_SEM_VALOR = 'Este link não vale mais. Use o link de hoje, que a recepção manda no grupo.'
 
-function lembrada(): number | null {
+// /almoco/{código do dia}
+const codigo = window.location.pathname.split('/')[2] ?? ''
+
+function chaveGuardada(): string | null {
   try {
-    const valor = window.localStorage.getItem(LEMBRAR)
-    return valor ? Number(valor) : null
+    const guardado = JSON.parse(window.localStorage.getItem(LEMBRAR_PEDIDO) ?? 'null')
+    return guardado?.codigo === codigo && typeof guardado.chave === 'string' ? guardado.chave : null
   } catch {
     return null
   }
 }
 
-function lembrar(pessoa: PessoaDoAlmoco | null) {
+function guardarChave(chave: string | null) {
   try {
-    if (pessoa) window.localStorage.setItem(LEMBRAR, String(pessoa.id))
-    else window.localStorage.removeItem(LEMBRAR)
+    if (chave) window.localStorage.setItem(LEMBRAR_PEDIDO, JSON.stringify({ codigo, chave }))
+    else window.localStorage.removeItem(LEMBRAR_PEDIDO)
   } catch {
-    // Navegador sem armazenamento: a pessoa só escolhe o nome de novo amanhã.
+    // Navegador sem armazenamento: o pedido vale, mas só a recepção consegue alterar.
   }
 }
 
-// A página do link que vai no grupo do WhatsApp, aberta sem login: cada pessoa escolhe o nome,
-// a proteína e os acompanhamentos, e pode alterar ou cancelar até a hora de fechar.
+function nomeGuardado(): string {
+  try {
+    return window.localStorage.getItem(LEMBRAR_NOME) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function guardarNome(nome: string) {
+  try {
+    window.localStorage.setItem(LEMBRAR_NOME, nome)
+  } catch {
+    // Sem armazenamento: a pessoa digita o nome de novo amanhã.
+  }
+}
+
+// A página do link que vai no grupo do WhatsApp, aberta sem login: cada pessoa digita o nome,
+// escolhe a proteína e os acompanhamentos, e pode alterar ou cancelar até a hora de fechar,
+// só do mesmo celular. Fora do dia ou depois de fechar, o link não mostra nada.
 export function PedidoDeAlmoco() {
-  const [dados, setDados] = useState<Publico>()
+  const [cardapio, setCardapio] = useState<Cardapio>()
   const [falha, setFalha] = useState<string>()
-  const [pessoa, setPessoa] = useState<PessoaDoAlmoco | null>(null)
-  // undefined: carregando; null: ainda não pediu.
+  const [chave, setChave] = useState<string | null>(chaveGuardada)
+  // undefined: carregando; null: ainda não pediu deste celular.
   const [pedido, setPedido] = useState<Pedido | null>()
   const [editando, setEditando] = useState(false)
+  const [nome, setNome] = useState(nomeGuardado)
   const [valores, setValores] = useState<ValoresDoPedido>(PEDIDO_VAZIO)
   const [erros, setErros] = useState<Record<string, string>>({})
   const [recusa, setRecusa] = useState<string>()
@@ -45,45 +69,66 @@ export function PedidoDeAlmoco() {
 
   useEffect(() => {
     document.title = 'Almoço de hoje · Campbel'
-    api
-      .ler<Publico>('/api/almoco/publico')
-      .then((lidos) => {
-        setDados(lidos)
-        const id = lembrada()
-        setPessoa(lidos.pessoas.find((outra) => outra.id === id) ?? null)
-      })
-      .catch((erro) => setFalha(mensagemDe(erro)))
+    try {
+      // O que o link antigo guardava: o número da pessoa no Ramal. Não serve mais.
+      window.localStorage.removeItem('recepcao-almoco-pessoa')
+    } catch {
+      // Sem armazenamento: nada a limpar.
+    }
+    if (!codigo) {
+      setFalha(LINK_SEM_VALOR)
+      return
+    }
+    async function carregar() {
+      try {
+        const lido = await api.ler<Cardapio>(`/api/almoco/publico/${codigo}`)
+        const guardada = chaveGuardada()
+        const meu = guardada
+          ? await api.ler<Pedido | null>(`/api/almoco/publico/${codigo}/pedidos/meu`, { [CABECALHO_DA_CHAVE]: guardada })
+          : null
+        if (!meu && guardada) {
+          // A recepção cancelou o pedido, ou a chave é de outro dia.
+          guardarChave(null)
+          setChave(null)
+        }
+        setCardapio(lido)
+        setPedido(meu)
+        setValores(valoresDoPedido(meu))
+        if (meu) setNome(meu.nome)
+        setEditando(!meu)
+      } catch (erro) {
+        setFalha(mensagemDe(erro))
+      }
+    }
+    carregar()
   }, [])
-
-  const cardapio = dados?.cardapio ?? null
-
-  useEffect(() => {
-    if (!pessoa || !cardapio) return
-    setPedido(undefined)
-    setRecusa(undefined)
-    setErros({})
-    setConfirmandoCancelamento(false)
-    api
-      .ler<Pedido | null>(`/api/almoco/publico/pedidos/${pessoa.id}`)
-      .then((lido) => {
-        setPedido(lido)
-        setValores(valoresDoPedido(lido))
-        setEditando(!lido)
-      })
-      .catch((erro) => setRecusa(mensagemDe(erro)))
-  }, [pessoa, cardapio])
 
   async function enviar(evento: FormEvent) {
     evento.preventDefault()
-    if (!pessoa) return
-    if (!valores.proteina) {
-      setErros({ proteina: 'Escolha a proteína.' })
+    const faltando: Record<string, string> = {}
+    if (!nome.trim()) faltando.nome = 'Digite o seu nome.'
+    if (!valores.proteina) faltando.proteina = 'Escolha a proteína.'
+    if (Object.keys(faltando).length) {
+      setErros(faltando)
       return
     }
     setEnviando(true)
     setRecusa(undefined)
+    const corpo = { nome: nome.trim(), ...pedidoParaApi(valores) }
     try {
-      const gravado = await api.alterar<Pedido>(`/api/almoco/publico/pedidos/${pessoa.id}`, pedidoParaApi(valores))
+      let gravado: Pedido
+      if (pedido && chave) {
+        gravado = await api.alterar<Pedido>(`/api/almoco/publico/${codigo}/pedidos/meu`, corpo, {
+          [CABECALHO_DA_CHAVE]: chave,
+        })
+      } else {
+        const feito = await api.gravar<PedidoComChave>(`/api/almoco/publico/${codigo}/pedidos`, corpo)
+        guardarChave(feito.chave)
+        setChave(feito.chave)
+        gravado = feito.pedido
+      }
+      guardarNome(gravado.nome)
+      setNome(gravado.nome)
       setPedido(gravado)
       setEditando(false)
     } catch (erro) {
@@ -95,11 +140,13 @@ export function PedidoDeAlmoco() {
   }
 
   async function cancelar() {
-    if (!pessoa) return
+    if (!chave) return
     setEnviando(true)
     setRecusa(undefined)
     try {
-      await api.apagar(`/api/almoco/publico/pedidos/${pessoa.id}`)
+      await api.apagar(`/api/almoco/publico/${codigo}/pedidos/meu`, { [CABECALHO_DA_CHAVE]: chave })
+      guardarChave(null)
+      setChave(null)
       setPedido(null)
       setValores(PEDIDO_VAZIO)
       setEditando(true)
@@ -115,108 +162,80 @@ export function PedidoDeAlmoco() {
 
   function conteudo() {
     if (falha) {
-      return <InlineNotification kind="error" title="Não foi possível carregar o cardápio." subtitle={falha} hideCloseButton />
-    }
-    if (!dados) return <InlineLoading description="Carregando o cardápio…" />
-    if (!cardapio) {
       return (
         <InlineNotification
           kind="info"
           lowContrast
-          title="O cardápio de hoje ainda não foi publicado."
-          subtitle="Assim que a recepção publicar, ele aparece aqui. Atualize a página daqui a pouco."
+          title="Este link não está recebendo pedidos."
+          subtitle={falha}
           hideCloseButton
         />
       )
     }
-    if (dados.pessoas.length === 0) {
-      return (
-        <InlineNotification
-          kind="info"
-          lowContrast
-          title="Nenhum nome cadastrado ainda."
-          subtitle="A recepção cadastra os nomes na tela Ramais do sistema."
-          hideCloseButton
-        />
-      )
-    }
+    if (!cardapio || pedido === undefined) return <InlineLoading description="Carregando o cardápio…" />
 
     return (
       <Stack gap={6}>
         <p>{situacaoDo(cardapio)}</p>
-        <ComboBox<PessoaDoAlmoco>
-          id="pedir-pessoa"
-          titleText="Seu nome"
-          placeholder="Busque pelo seu nome"
-          helperText="Este celular lembra o seu nome para os próximos dias."
-          items={dados.pessoas}
-          itemToString={(item) => (item ? item.nome : '')}
-          shouldFilterItem={({ item, inputValue }) => combinaComBusca(inputValue ?? '', item.nome, item.setor)}
-          selectedItem={pessoa}
-          onChange={({ selectedItem }) => {
-            setPessoa(selectedItem ?? null)
-            lembrar(selectedItem ?? null)
-          }}
-        />
 
-        {pessoa && pedido === undefined && !recusa && <InlineLoading description="Procurando o seu pedido…" />}
-
-        {pessoa && pedido !== undefined && !editando && pedido && (
+        {pedido && !editando && (
           <Stack gap={5}>
             <InlineNotification
               kind="success"
               lowContrast
-              title="Seu pedido está feito."
+              title={`Pedido de ${pedido.nome} feito.`}
               subtitle={`${pedido.proteina} com ${acompanhamentosDo(pedido).toLowerCase()}${
                 pedido.observacao ? `. ${pedido.observacao}` : ''
               }.`}
               hideCloseButton
             />
-            {cardapio.aberto ? (
-              confirmandoCancelamento ? (
-                <Stack gap={3}>
-                  <p>Cancelar o seu pedido de hoje?</p>
-                  <Button className="recepcao-pedir__largo" onClick={cancelar} disabled={enviando}>
-                    {enviando ? 'Cancelando…' : 'Cancelar pedido'}
-                  </Button>
-                  <Button className="recepcao-pedir__largo" kind="secondary" onClick={() => setConfirmandoCancelamento(false)}>
-                    Voltar
-                  </Button>
-                </Stack>
-              ) : (
-                <Stack gap={3}>
-                  <p>Dá para alterar ou cancelar até {emHoraCurta(cardapio.fechaAs)}.</p>
-                  <Button className="recepcao-pedir__largo" onClick={() => setEditando(true)}>
-                    Alterar pedido
-                  </Button>
-                  <Button className="recepcao-pedir__largo" kind="secondary" onClick={() => setConfirmandoCancelamento(true)}>
-                    Cancelar pedido
-                  </Button>
-                </Stack>
-              )
+            {confirmandoCancelamento ? (
+              <Stack gap={3}>
+                <p>Cancelar o seu pedido de hoje?</p>
+                <Button className="recepcao-pedir__largo" onClick={cancelar} disabled={enviando}>
+                  {enviando ? 'Cancelando…' : 'Cancelar pedido'}
+                </Button>
+                <Button className="recepcao-pedir__largo" kind="secondary" onClick={() => setConfirmandoCancelamento(false)}>
+                  Voltar
+                </Button>
+              </Stack>
             ) : (
-              <p>Os pedidos de hoje já fecharam. Para mudar alguma coisa, fale com a recepção.</p>
+              <Stack gap={3}>
+                <p>
+                  Dá para alterar ou cancelar até {emHoraCurta(cardapio.fechaAs)}, por este celular. De outro aparelho,
+                  fale com a recepção.
+                </p>
+                <Button className="recepcao-pedir__largo" onClick={() => setEditando(true)}>
+                  Alterar pedido
+                </Button>
+                <Button className="recepcao-pedir__largo" kind="secondary" onClick={() => setConfirmandoCancelamento(true)}>
+                  Cancelar pedido
+                </Button>
+              </Stack>
             )}
           </Stack>
         )}
 
-        {pessoa && pedido !== undefined && editando && !cardapio.aberto && (
-          <InlineNotification
-            kind="warning"
-            lowContrast
-            title="Os pedidos de hoje já fecharam."
-            subtitle={`${situacaoDo(cardapio)}. Para pedir agora, fale com a recepção.`}
-            hideCloseButton
-          />
-        )}
+        {recusa && <InlineNotification kind="error" title="O pedido foi recusado." subtitle={recusa} hideCloseButton />}
 
-        {recusa && (
-          <InlineNotification kind="error" title="O pedido foi recusado." subtitle={recusa} hideCloseButton />
-        )}
-
-        {pessoa && pedido !== undefined && editando && cardapio.aberto && (
+        {editando && (
           <Form autoComplete="off" onSubmit={enviar}>
             <Stack gap={6}>
+              <TextInput
+                id="pedir-nome"
+                labelText="Seu nome"
+                placeholder="Nome e sobrenome"
+                helperText="Do jeito que você quer que apareça na lista do restaurante."
+                maxLength={80}
+                autoComplete="name"
+                value={nome}
+                onChange={(evento) => {
+                  setNome(evento.target.value)
+                  setErros((antes) => ({ ...antes, nome: '' }))
+                }}
+                invalid={Boolean(erros.nome)}
+                invalidText={erros.nome}
+              />
               <CamposDoPedido
                 prefixo="pedir"
                 cardapio={cardapio}
@@ -224,7 +243,7 @@ export function PedidoDeAlmoco() {
                 erros={erros}
                 aoMudar={(novos) => {
                   setValores(novos)
-                  setErros({})
+                  setErros((antes) => ({ nome: antes.nome ?? '' }))
                 }}
               />
               <Stack gap={3}>
@@ -237,8 +256,10 @@ export function PedidoDeAlmoco() {
                     kind="secondary"
                     onClick={() => {
                       setValores(valoresDoPedido(pedido))
+                      setNome(pedido.nome)
                       setEditando(false)
                       setRecusa(undefined)
+                      setErros({})
                     }}
                   >
                     Voltar
